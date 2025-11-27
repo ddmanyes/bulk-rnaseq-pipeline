@@ -1,3 +1,15 @@
+---
+title: Bulk RNAseq Pipeline
+emoji: 🧬
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.39.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # Bulk RNA-seq Analysis Pipeline & Interactive Explorer
 
 This project provides a comprehensive and automated pipeline for bulk RNA-seq analysis, paired with an interactive web application for visualizing the results.

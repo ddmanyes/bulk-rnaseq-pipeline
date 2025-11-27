@@ -69,6 +69,19 @@ with st.sidebar:
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to load demo data: {e}")
+    st.markdown("---")
+    st.subheader("📤 Upload Data")
+    uploaded_general_files = st.file_uploader("Upload to 'input' folder", accept_multiple_files=True, help="Upload metadata.csv, counts.csv, or other input files directly.")
+    
+    if uploaded_general_files:
+        if not os.path.exists("input"):
+            os.makedirs("input")
+        
+        for uploaded_file in uploaded_general_files:
+            file_path = os.path.join("input", uploaded_file.name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.toast(f"Saved: {uploaded_file.name}")
 
 # Load initial config
 config = load_config()
@@ -83,82 +96,81 @@ with tab_merge:
     st.header("Merge Count Matrices")
     st.markdown("Combine multiple count files (CSV, Excel, featureCounts) into a single matrix for analysis.")
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        input_folder = st.text_input("Input Folder Path", value="input", help="Folder containing your count files")
-    with col2:
-        if st.button("Scan Folder"):
-            st.rerun()
-
-    if os.path.exists(input_folder):
-        # Find potential count files
-        all_files = [f for f in os.listdir(input_folder) if f.endswith(('.csv', '.xlsx', '.txt', '.tsv')) and not f.startswith('merged_')]
+    st.markdown("Combine multiple count files (CSV, Excel, featureCounts) into a single matrix for analysis.")
+    
+    # File Uploader
+    uploaded_files = st.file_uploader("Upload Count Files", type=['csv', 'xlsx', 'txt', 'tsv'], accept_multiple_files=True)
+    
+    if uploaded_files:
+        st.success(f"Uploaded {len(uploaded_files)} files.")
         
-        if all_files:
-            st.success(f"Found {len(all_files)} potential count files.")
-            
-            selected_files = st.multiselect("Select files to merge", options=all_files, default=all_files)
-            
-            output_filename = st.text_input("Output Filename", value="merged_counts.csv")
-            
-            if st.button("Merge Selected Files", type="primary"):
-                if not selected_files:
-                    st.warning("Please select at least one file.")
-                else:
-                    with st.spinner("Merging files..."):
-                        try:
-                            # Import the merge logic dynamically or reimplement it here for simplicity
-                            # Reimplementing core logic to avoid external script dependency issues in Streamlit
-                            merged_df = pd.DataFrame()
-                            
-                            for filename in selected_files:
-                                filepath = os.path.join(input_folder, filename)
-                                st.text(f"Processing {filename}...")
-                                
-                                # Read file
-                                if filename.endswith('.csv'):
-                                    df = pd.read_csv(filepath, index_col=0)
-                                elif filename.endswith('.xlsx'):
-                                    df = pd.read_excel(filepath, index_col=0)
-                                else:
-                                    # Try tab then comma
-                                    try:
-                                        df = pd.read_csv(filepath, sep='\t', comment='#', index_col=0)
-                                    except:
-                                        df = pd.read_csv(filepath, index_col=0)
+        output_filename = st.text_input("Output Filename", value="merged_counts.csv")
+        
+        if st.button("Merge Files"):
+            try:
+                merged_df = pd.DataFrame()
+                
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                for i, uploaded_file in enumerate(uploaded_files):
+                    status_text.text(f"Processing {uploaded_file.name}...")
+                    
+                    # Determine file type and read
+                    if uploaded_file.name.endswith('.csv'):
+                        df = pd.read_csv(uploaded_file, index_col=0)
+                    elif uploaded_file.name.endswith('.xlsx'):
+                        df = pd.read_excel(uploaded_file, index_col=0)
+                    elif uploaded_file.name.endswith(('.txt', '.tsv')):
+                        df = pd.read_csv(uploaded_file, sep='\t', comment='#')
+                        # Handle featureCounts format
+                        if 'Geneid' in df.columns:
+                            df = df.set_index('Geneid')
+                        elif df.index.name != 'Geneid' and 'Geneid' not in df.columns and df.shape[1] > 6: 
+                             # Try to guess if it's featureCounts without header or with different header
+                             pass
 
-                                # Clean featureCounts
-                                if 'Chr' in df.columns and 'Start' in df.columns:
-                                    df = df.iloc[:, 5:]
-                                    df.columns = [c.split('/')[-1].replace('.sorted.bam', '').replace('.bam', '') for c in df.columns]
-                                
-                                # Merge
-                                if merged_df.empty:
-                                    merged_df = df
-                                else:
-                                    # Handle duplicates
-                                    common_cols = set(merged_df.columns) & set(df.columns)
-                                    if common_cols:
-                                        df.rename(columns={c: f"{c}_{filename}" for c in common_cols}, inplace=True)
-                                    
-                                    merged_df = merged_df.merge(df, left_index=True, right_index=True, how='outer')
-                            
-                            # Fill NaNs
-                            merged_df.fillna(0, inplace=True)
-                            
-                            # Save
-                            output_path = os.path.join(input_folder, output_filename)
-                            merged_df.to_csv(output_path)
-                            
-                            st.success(f"✅ Successfully merged {len(selected_files)} files into `{output_path}`")
-                            st.dataframe(merged_df.head())
-                            
-                        except Exception as e:
-                            st.error(f"Error during merge: {e}")
-        else:
-            st.warning("No compatible files (.csv, .xlsx, .txt) found in directory.")
+                        # Clean featureCounts columns (remove metadata columns)
+                        if 'Chr' in df.columns and 'Start' in df.columns:
+                            df = df.iloc[:, 5:] # Keep only counts
+                            # Clean sample names (remove path and extension)
+                            df.columns = [c.split('/')[-1].split('\\')[-1].replace('.sorted.bam', '').replace('.bam', '') for c in df.columns]
+
+                    # Handle duplicate columns (samples)
+                    # If a sample name already exists in merged_df, append a suffix
+                    new_columns = []
+                    for col in df.columns:
+                        if not merged_df.empty and col in merged_df.columns:
+                            new_columns.append(f"{col}_{uploaded_file.name}")
+                        else:
+                            new_columns.append(col)
+                    df.columns = new_columns
+                    
+                    # Merge
+                    if merged_df.empty:
+                        merged_df = df
+                    else:
+                        merged_df = merged_df.join(df, how='outer')
+                    
+                    progress_bar.progress((i + 1) / len(uploaded_files))
+                
+                # Fill NAs with 0
+                merged_df = merged_df.fillna(0)
+                
+                # Save to input directory
+                if not os.path.exists("input"):
+                    os.makedirs("input")
+                output_path = os.path.join("input", output_filename)
+                merged_df.to_csv(output_path)
+                
+                status_text.text("Done!")
+                st.success(f"Successfully merged {len(uploaded_files)} files into `{output_path}`")
+                st.dataframe(merged_df.head())
+                
+            except Exception as e:
+                st.error(f"An error occurred during merging: {e}")
     else:
-        st.error("Directory does not exist.")
+        st.info("Please upload files to begin.")
 
 # ==========================================
 # TAB 0: Metadata Creation

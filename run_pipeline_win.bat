@@ -5,20 +5,34 @@ echo =================================================
 echo    Bulk RNA-seq Analysis Pipeline Launcher
 echo =================================================
 
-REM 1. Check for Python
+REM 1. Check for Python (Try python, py, then python3)
+set PYTHON_CMD=python
+
 python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Python is not detected.
-    echo Please install Python 3 from https://www.python.org/downloads/
-    echo Make sure to check "Add Python to PATH" during installation.
-    pause
-    exit /b
-)
+if %errorlevel% equ 0 goto :FOUND_PYTHON
+
+set PYTHON_CMD=py
+py --version >nul 2>&1
+if %errorlevel% equ 0 goto :FOUND_PYTHON
+
+set PYTHON_CMD=python3
+python3 --version >nul 2>&1
+if %errorlevel% equ 0 goto :FOUND_PYTHON
+
+echo [ERROR] Python is not detected.
+echo Please install Python 3 from https://www.python.org/downloads/
+echo IMPORTANT: Check "Add Python to PATH" during installation.
+pause
+exit /b
+
+:FOUND_PYTHON
+echo [INFO] Using Python command: %PYTHON_CMD%
+
 
 REM 2. Create Virtual Environment if not exists
 if not exist ".venv" (
     echo [INFO] Creating virtual environment (.venv)...
-    python -m venv .venv
+    %PYTHON_CMD% -m venv .venv
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to create virtual environment.
         pause

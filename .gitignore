@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Project Specific - Large Data & Outputs
+output/
+input/*.txt
+input/*.bam
+input/*.sam
+input/*.gz
+genesets/*.gtf
+genesets/*.gff
+genesets/*.gz
+
+# Keep metadata.csv and small example files if needed, but ignore large raw data
+# You can force add files with `git add -f` if you really want them.
+
+# IDE settings (optional)
+.vscode/
+.idea/

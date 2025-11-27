@@ -1,0 +1,14 @@
+pandas
+omicverse
+combat
+matplotlib
+torch_geometric
+openpyxl
+streamlit
+scipy
+seaborn
+PyYAML
+gseapy
+adjustText
+scikit-learn
+anndata

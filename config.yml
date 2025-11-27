@@ -1,0 +1,31 @@
+files:
+  feature_counts: input/KwtfWz_TS241219002_featureCount.txt
+  gene_annotation: genesets/pair_GRCm39.tsv
+  metadata: input/metadata.csv
+  output_dir: output
+  batch_correction:
+    enabled: false
+    batch_key: Batch
+analysis:
+  diff_expression:
+    control_group: Control
+    filter_low_expression: true
+  significance:
+    padj_threshold: 0.05
+    log2fc_threshold: 1.0
+  variable_heatmap:
+    top_n_genes: 50
+  enrichment:
+    species: Mouse
+    top_terms_to_plot: 15
+    libraries:
+      GO: GO_Biological_Process_2023
+      KEGG: KEGG_2019_Mouse
+      Reactome: Reactome_2022
+  time_series:
+    enabled: true
+    num_clusters: 4
+    top_n_genes: 2000
+    k_evaluation:
+      enabled: true
+      max_k: 10

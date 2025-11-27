@@ -1,0 +1,123 @@
+# Bulk RNA-seq Analysis Pipeline & Interactive Explorer
+
+This project provides a comprehensive and automated pipeline for bulk RNA-seq analysis, paired with an interactive web application for visualizing the results.
+
+The pipeline starts from a raw `featureCounts` matrix, performs differential gene expression, enrichment analysis, and time-series clustering, and generates a full suite of publication-ready plots and tables. The entire workflow is easily controlled through a single `config.yml` file.
+
+## Key Features
+
+- **End-to-End Analysis**: From raw counts to final plots with one command.
+- **Principal Component Analysis (PCA)**: Generates a PCA plot to visualize sample-level relationships and batch effects based on overall gene expression.
+- **Batch Correction**: Integrated ComBat batch correction to remove unwanted technical variation, with automatic "Before vs After" visualization.
+- **Rich Visualizations**: Automatically generates Volcano Plots, Clustered Heatmaps (for significant and top-variable genes), and Time-Series trend plots.
+- **Enrichment Analysis**: Performs Over-Representation Analysis (ORA) against multiple databases (e.g., GO, KEGG, Reactome) and generates dot plots for results.
+- **Time-Series Clustering**: Identifies co-expressed gene modules in time-course data using K-means clustering and visualizes their trends.
+- **Fully Configurable**: Easily manage all file paths, analysis parameters, and thresholds in one central `config.yml` file.
+- **Interactive Explorer**: Includes a Streamlit web app to dynamically generate and explore boxplots for genes of interest.
+- **Reproducible**: Bundled with a `requirements.txt` file to ensure a consistent environment.
+- **Kallisto Integration**: Includes a helper script to aggregate Kallisto transcript abundance into a gene-level count matrix compatible with this pipeline.
+
+## Project Structure
+
+```
+├── input/
+│   ├── KwtfWz_TS241219002_featureCount.txt  # Your raw featureCounts data
+│   └── metadata.csv                         # Sample metadata (Condition, Time, Type)
+├── genesets/
+│   └── pair_GRCm39.tsv                      # Gene annotation files
+├── output/                                  # All generated results are saved here
+│   ├── PCA_plot.png                         # Principal Component Analysis plot
+│   ├── PCA_Batch_Correction_Comparison.png  # PCA showing before vs after batch correction
+│   ├── counts.csv                           # Preprocessed and gene-ID-mapped counts
+│   ├── counts_batch_corrected.csv           # Batch-corrected count matrix
+│   ├── log2cpm_normalized_counts.csv        # Log2CPM normalized counts
+│   ├── DEG_*.csv                            # DGE results for each comparison
+│   ├── Volcano_*.png                        # Volcano plots for each comparison
+│   ├── Heatmap_Significant_Genes.png        # Heatmap of all significant genes
+│   ├── Heatmap_Top50_Variable_Genes.png     # Heatmap of top N variable genes
+│   ├── Master_Results_Table.csv             # Combined DGE, cluster, and expression data
+│   ├── Master_Results_Table.xlsx            # Combined DGE, cluster, and expression data
+│   ├── TimeSeries_Clustering_k4.png         # Time-series cluster plot
+│   ├── k_evaluation_plot.png                # Optional plot to help choose k
+│   └── enrichment/                          # GO/KEGG/Reactome results (CSVs & plots)
+├── analysis_pipeline.py                     # The main executable analysis script
+├── kallisto_to_matrix.py                    # Helper script to convert Kallisto output to gene counts
+├── app.py                                   # The interactive Streamlit web application
+├── config.yml                               # All user-configurable parameters
+├── requirements.txt                         # Required Python libraries
+└── README.md                                # This documentation file
+```
+
+## Setup and Installation
+
+1. **Clone the repository or download the project files.**
+
+2. **Ensure you have Python 3.8+ installed.**
+
+3. **Create and activate a virtual environment (recommended):**
+
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    # On Windows, use: .venv\Scripts\activate
+    ```
+
+4. **Install all required libraries:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## How to Run the Pipeline
+
+You can run the pipeline using the **Interactive GUI** (Recommended) or the **Command Line**.
+
+### Option 1: Using the Interactive GUI (Recommended)
+
+The Streamlit app provides a user-friendly interface for the entire workflow.
+
+1. **Launch the App**:
+
+    ```bash
+    streamlit run app.py
+    ```
+
+2. **Navigate the Tabs**:
+    - **📂 Merge Counts**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
+    - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
+    - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
+    - **📊 Interactive Visualization**: Explore gene expression with boxplots and view differential expression statistics for selected genes.
+    - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
+    - **🧬 Pathway Analysis**: Explore enrichment analysis results (Dotplots) for different comparisons.
+
+### Option 2: Command Line Workflow
+
+1. **Prepare Input**: Place `featureCounts` file in `input/` and ensure `metadata.csv` is ready.
+2. **Configure**: Edit `config.yml` manually.
+3. **Run**:
+
+    ```bash
+    python analysis_pipeline.py
+    ```
+
+## Merging Multiple Datasets
+
+If you have multiple count files, use the **"Merge Counts"** tab in the GUI or run the helper script:
+
+```bash
+python merge_counts.py input/batch1.csv input/batch2.xlsx -o input/merged_counts.csv
+```
+
+## Batch Correction
+
+1. **Metadata**: Add a "Batch" column to your metadata (via GUI or CSV).
+2. **Config**: Enable batch correction in the **"Run Analysis"** tab or `config.yml`.
+3. **Result**: Check `output/PCA_Batch_Correction_Comparison.png`.
+
+## Output Files
+
+The pipeline generates the following in the `output/` directory:
+
+- **Plots**: `PCA_plot.png`, `Volcano_*.png`, `Heatmap_*.png`, `TimeSeries_*.png`.
+- **Data**: `counts.csv`, `counts_batch_corrected.csv`, `DEG_*.csv`, `Master_Results_Table.csv`.
+- **Enrichment**: `enrichment/` folder containing dotplots and CSVs for GO/KEGG analysis.

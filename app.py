@@ -1,3 +1,4 @@
+import shutil
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -47,6 +48,27 @@ def run_pipeline():
 # --- Main App Layout ---
 st.set_page_config(layout="wide", page_title="RNA-seq Pipeline GUI")
 st.title("🧬 Bulk RNA-seq Analysis Pipeline")
+
+# --- Sidebar: Demo Data ---
+with st.sidebar:
+    st.header("🔧 Utility")
+    if os.path.exists("demo_data"):
+        if st.button("📥 Load Demo Data", help="Load pre-computed example data for testing."):
+            try:
+                # Copy input
+                if not os.path.exists("input"): os.makedirs("input")
+                if os.path.exists("demo_data/input/metadata.csv"):
+                    shutil.copy("demo_data/input/metadata.csv", "input/metadata.csv")
+                
+                # Copy output
+                if os.path.exists("output"): shutil.rmtree("output")
+                shutil.copytree("demo_data/output", "output")
+                
+                st.success("Demo data loaded! Please refresh or go to Visualization tabs.")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to load demo data: {e}")
 
 # Load initial config
 config = load_config()

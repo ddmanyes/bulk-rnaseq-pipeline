@@ -48,6 +48,26 @@
 └── README.md                                # 本文件
 ```
 
+## 下載專案
+
+您可以透過以下兩種方式下載此專案：
+
+### 選項 1：Git Clone (推薦)
+
+如果您已安裝 Git，請在終端機中執行以下指令：
+
+```bash
+git clone https://github.com/ddmanyes/bulk-rnaseq-pipeline.git
+cd bulk-rnaseq-pipeline
+```
+
+### 選項 2：下載 ZIP 檔
+
+1. 前往 GitHub 專案頁面：[https://github.com/ddmanyes/bulk-rnaseq-pipeline](https://github.com/ddmanyes/bulk-rnaseq-pipeline)
+2. 點擊綠色的 **Code** 按鈕。
+3. 選擇 **Download ZIP**。
+4. 將下載的檔案解壓縮到您想要的資料夾。
+
 ## 一鍵安裝與執行 (推薦)
 
 我們提供了自動化腳本，讓您一鍵完成環境設定並啟動應用程式。

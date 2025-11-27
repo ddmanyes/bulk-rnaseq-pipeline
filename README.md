@@ -48,6 +48,26 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 └── README.md                                # This documentation file
 ```
 
+## Download the Project
+
+You can download this project in two ways:
+
+### Option 1: Git Clone (Recommended)
+
+If you have Git installed, run the following command in your terminal:
+
+```bash
+git clone https://github.com/ddmanyes/bulk-rnaseq-pipeline.git
+cd bulk-rnaseq-pipeline
+```
+
+### Option 2: Download ZIP
+
+1. Go to the GitHub repository page: [https://github.com/ddmanyes/bulk-rnaseq-pipeline](https://github.com/ddmanyes/bulk-rnaseq-pipeline)
+2. Click the green **Code** button.
+3. Select **Download ZIP**.
+4. Unzip the downloaded file to your desired folder.
+
 ## One-Click Installation & Run (Recommended)
 
 We provide automated scripts to set up the environment and launch the app in one click.

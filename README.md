@@ -21,12 +21,12 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 
 ```
 ├── input/
-│   ├── KwtfWz_TS241219002_featureCount.txt  # Your raw featureCounts data
-│   └── metadata.csv                         # Sample metadata (Condition, Time, Type)
+│   ├── featureCount files                  # Your raw featureCounts data
+│   └── metadata.csv                        # Sample metadata (Condition, Time, Type)
 ├── genesets/
-│   └── pair_GRCm39.tsv                      # Gene annotation files
-├── output/                                  # All generated results are saved here
-│   ├── PCA_plot.png                         # Principal Component Analysis plot
+│   └── pair_GRCm39.tsv                     # Gene annotation files
+├── output/                                 # All generated results are saved here
+│   ├── PCA_plot.png                        # Principal Component Analysis plot
 │   ├── PCA_Batch_Correction_Comparison.png  # PCA showing before vs after batch correction
 │   ├── counts.csv                           # Preprocessed and gene-ID-mapped counts
 │   ├── counts_batch_corrected.csv           # Batch-corrected count matrix

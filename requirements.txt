@@ -3,7 +3,6 @@ pandas>=2.2
 omicverse
 combat
 matplotlib
-torch
 torch_geometric
 openpyxl
 streamlit

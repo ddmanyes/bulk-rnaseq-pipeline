@@ -13,7 +13,8 @@
 - **富集分析**：針對多個資料庫 (如 GO, KEGG, Reactome) 執行過度表現分析 (ORA)，並生成結果的點圖 (Dot Plots)。
 - **時間序列分群**：使用 K-means 分群法識別時間序列數據中共同表現的基因模組，並視覺化其趨勢。
 - **完全可配置**：在一個中央 `config.yml` 檔案中輕鬆管理所有檔案路徑、分析參數和閾值。
-- **互動式瀏覽器**：包含一個 Streamlit 網頁應用程式，可動態生成並探索感興趣基因的箱形圖 (Boxplots)。
+- **互動式瀏覽器**：包含一個 Streamlit 網頁應用程式，可透過箱形圖 (Boxplots) 和互動式熱圖 (Interactive Heatmaps) 動態探索基因表現。
+- **數據導出**：可直接從應用程式下載處理後的數據、差異表現結果和通路分析表格。
 - **可重現性**：附帶 `requirements.txt` 檔案，確保環境的一致性。
 - **Kallisto 整合**：包含一個輔助腳本，可將 Kallisto 的轉錄本豐度 (transcript abundance) 聚合為與此流程相容的基因級計數矩陣 (gene-level count matrix)。
 
@@ -109,9 +110,12 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
     - **📂 Merge Counts (合併計數)**：選擇包含多個計數檔案 (CSV, Excel, featureCounts) 的資料夾，並將它們合併為單一矩陣。
     - **📝 Metadata Creation (建立元數據)**：互動式地建立或編輯您的 `metadata.csv` 檔案。確保包含 `Condition`, `Time`, 和 `Type` 欄位。
     - **⚙️ Run Analysis (執行分析)**：設定所有分析參數 (檔案、閾值、批次校正等) 並點擊 **"Run Analysis Pipeline"**。您可以即時查看執行日誌。
-    - **📊 Interactive Visualization (互動式視覺化)**：透過箱形圖探索基因表現，並查看選定基因的差異表現統計數據。
+    - **📊 Interactive Visualization (互動式視覺化)**：
+        - **Boxplot (箱形圖)**：視覺化不同組別間的基因表現分佈。
+        - **Heatmap (熱圖)**：透過 Z-score 標準化和可自訂的色階探索表現模式。
+    - **🌋 Volcano Plot (火山圖)**：查看靜態火山圖，並透過互動式表格探索底層數據（依顯著性篩選、下載結果）。
     - **📈 Static Plots (靜態圖表)**：查看分析產生的所有預生成圖表 (PCA, 火山圖, 熱圖)。
-    - **🧬 Pathway Analysis (通路分析)**：探索不同比較的富集分析結果 (Dotplots)。
+    - **🧬 Pathway Analysis (通路分析)**：探索富集分析結果。選擇特定的比較和通路圖表（例如 GO Biological Process, KEGG）並下載結果表格。
 
 ### 選項 2：命令列工作流程
 

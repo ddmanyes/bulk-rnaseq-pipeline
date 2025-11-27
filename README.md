@@ -13,7 +13,8 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 - **Enrichment Analysis**: Performs Over-Representation Analysis (ORA) against multiple databases (e.g., GO, KEGG, Reactome) and generates dot plots for results.
 - **Time-Series Clustering**: Identifies co-expressed gene modules in time-course data using K-means clustering and visualizes their trends.
 - **Fully Configurable**: Easily manage all file paths, analysis parameters, and thresholds in one central `config.yml` file.
-- **Interactive Explorer**: Includes a Streamlit web app to dynamically generate and explore boxplots for genes of interest.
+- **Interactive Explorer**: Includes a Streamlit web app to dynamically explore gene expression via Boxplots and Interactive Heatmaps.
+- **Data Export**: Easily download processed data, differential expression results, and pathway analysis tables directly from the app.
 - **Reproducible**: Bundled with a `requirements.txt` file to ensure a consistent environment.
 - **Kallisto Integration**: Includes a helper script to aggregate Kallisto transcript abundance into a gene-level count matrix compatible with this pipeline.
 
@@ -109,23 +110,12 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     - **📂 Merge Counts**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
     - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
     - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
-    - **📊 Interactive Visualization**:    - Click **"Generate Boxplot"** to view the plot and the corresponding differential expression data.
-
-## References & Citations
-
-If you use this pipeline in your research, please consider citing the following tools and packages that made this work possible:
-
-- **OmicVerse**: [https://github.com/StarlitOnes/OmicVerse](https://github.com/StarlitOnes/OmicVerse)
-- **GSEApy (Enrichr)**: Fang, Z., Liu, X., & Peltz, G. (2023). GSEApy: a comprehensive package for performing gene set enrichment analysis in Python. *Bioinformatics*.
-- **ComBat (Batch Correction)**: Johnson, W. E., Li, C., & Rabinovic, A. (2007). Adjusting batch effects in microarray expression data using empirical Bayes methods. *Biostatistics*.
-- **Streamlit**: [https://streamlit.io/](https://streamlit.io/)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-tistics for selected genes.
+    - **📊 Interactive Visualization**:
+        - **Boxplot**: Visualize gene expression distribution across groups.
+        - **Heatmap**: Explore expression patterns with Z-score normalization and customizable color scales.
+    - **🌋 Volcano Plot**: View static Volcano Plots and explore the underlying data with an interactive table (filter by significance, download results).
     - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
-    - **🧬 Pathway Analysis**: Explore enrichment analysis results (Dotplots) for different comparisons.
+    - **🧬 Pathway Analysis**: Explore enrichment analysis results. Select specific comparisons and pathway plots (e.g., GO Biological Process, KEGG) and download result tables.
 
 ### Option 2: Command Line Workflow
 

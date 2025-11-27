@@ -48,7 +48,27 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 └── README.md                                # This documentation file
 ```
 
-## Setup and Installation
+## One-Click Installation & Run (Recommended)
+
+We provide automated scripts to set up the environment and launch the app in one click.
+
+### For macOS Users
+
+1. Locate the file **`run_pipeline.command`** in the project folder.
+2. **Double-click** it.
+3. A terminal window will open, automatically install Python libraries, and launch the GUI in your browser.
+
+### For Windows Users
+
+1. Locate the file **`run_pipeline_win.bat`** in the project folder.
+2. **Double-click** it.
+3. A command window will open, automatically set up the environment, and launch the GUI.
+
+---
+
+## Manual Setup and Installation
+
+If you prefer to set up the environment manually:
 
 1. **Clone the repository or download the project files.**
 

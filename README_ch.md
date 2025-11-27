@@ -92,6 +92,13 @@ cd bulk-rnaseq-pipeline
     pip install -r requirements.txt
     ```
 
+### Windows 相容性說明
+
+大多數套件在 Windows 上都能順利運作。然而，`omicverse` 和 `torch` (PyTorch) 有時會因為系統依賴性問題而較難安裝。
+
+- **如果自動安裝失敗**：請嘗試先手動安裝 PyTorch（請參考 [pytorch.org](https://pytorch.org/get-started/locally/) 的說明），然後再執行 `pip install -r requirements.txt`。
+- **CPU 與 GPU**：預設安裝通常包含 PyTorch 的 CPU 版本，這對於此分析流程已經足夠。
+
 ## 如何執行流程
 
 您可以使用 **互動式 GUI** (推薦) 或 **命令列** 來執行流程。

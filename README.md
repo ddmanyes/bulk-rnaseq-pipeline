@@ -92,6 +92,13 @@ If you prefer to set up the environment manually:
     pip install -r requirements.txt
     ```
 
+### Windows Compatibility Note
+
+Most packages work seamlessly on Windows. However, `omicverse` and `torch` (PyTorch) can sometimes be tricky to install due to system-specific dependencies.
+
+- **If the automatic installer fails**: Try installing PyTorch manually first, following the instructions at [pytorch.org](https://pytorch.org/get-started/locally/), and then run `pip install -r requirements.txt`.
+- **CPU vs GPU**: The default installation typically includes the CPU version of PyTorch, which is sufficient for this pipeline.
+
 ## How to Run the Pipeline
 
 You can run the pipeline using the **Interactive GUI** (Recommended) or the **Command Line**.

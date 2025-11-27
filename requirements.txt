@@ -1,6 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-numpy>=2.1
-pandas>=2.2
+numpy
+pandas
 torch
 omicverse
 combat
@@ -8,7 +8,7 @@ matplotlib
 torch_geometric
 openpyxl
 streamlit
-scipy>=1.14
+scipy
 seaborn
 PyYAML
 gseapy

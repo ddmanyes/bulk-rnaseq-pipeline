@@ -74,7 +74,7 @@ If you prefer to set up the environment manually:
 
 1. **Clone the repository or download the project files.**
 
-2. **Ensure you have Python 3.8+ installed.**
+2. **Ensure you have Python 3.9+ installed.**
 
 3. **Create and activate a virtual environment (recommended):**
 
@@ -87,6 +87,7 @@ If you prefer to set up the environment manually:
 4. **Install all required libraries:**
 
     ```bash
+    pip install torch
     pip install -r requirements.txt
     ```
 

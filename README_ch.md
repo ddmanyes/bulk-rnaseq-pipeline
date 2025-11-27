@@ -74,7 +74,7 @@ cd bulk-rnaseq-pipeline
 
 1. **複製 (Clone) 此儲存庫或下載專案檔案。**
 
-2. **確保您已安裝 Python 3.8+。**
+2. **確保您已安裝 Python 3.9+。**
 
 3. **建立並啟用虛擬環境 (建議)：**
 
@@ -87,6 +87,7 @@ cd bulk-rnaseq-pipeline
 4. **安裝所有需要的套件：**
 
     ```bash
+    pip install torch
     pip install -r requirements.txt
     ```
 

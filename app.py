@@ -62,7 +62,7 @@ with st.sidebar:
                 
                 # Copy output
                 if os.path.exists("output"): shutil.rmtree("output")
-                shutil.copytree("demo_data/output", "output")
+                shutil.copytree("demo_data/demo_results", "output")
                 
                 st.success("Demo data loaded! Please refresh or go to Visualization tabs.")
                 time.sleep(1)

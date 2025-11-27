@@ -1,0 +1,2 @@
+,Gene_set,Term,Overlap,P-value,Adjusted P-value,Old P-value,Old Adjusted P-value,Odds Ratio,Combined Score,Genes
+0,KEGG_2019_Mouse,Fluid shear stress and atherosclerosis,4/143,0.0001874884466362808,0.0138741450510847,0,0,15.844124700239808,135.97100371010708,EDN1;DUSP1;FOS;KLF2

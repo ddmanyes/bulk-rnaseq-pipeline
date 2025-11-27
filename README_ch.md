@@ -134,13 +134,12 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
     python analysis_pipeline.py
     ```
 
-## 合併多個數據集
+### 第一步：合併計數矩陣 (選用)
 
-如果您有多個計數檔案，請使用 GUI 中的 **"Merge Counts"** 分頁或執行輔助腳本：
+如果您有多個計數檔案（例如 featureCounts 的輸出），請前往 **「📂 Merge Counts」** 分頁：
 
-```bash
-python merge_counts.py input/batch1.csv input/batch2.xlsx -o input/merged_counts.csv
-```
+1. **上傳檔案**：將您的計數檔案 (`.txt`, `.csv`, `.xlsx`) 拖曳到上傳區塊中。
+2. **執行合併**：點擊 "Merge Files"。程式會將它們合併成一個 `merged_counts.csv` 並存放在 `input` 資料夾中。
 
 ## 批次效應校正
 

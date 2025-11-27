@@ -146,13 +146,12 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     python analysis_pipeline.py
     ```
 
-## Merging Multiple Datasets
+### Step 1: Merge Count Matrices (Optional)
 
-If you have multiple count files, use the **"Merge Counts"** tab in the GUI or run the helper script:
+If you have multiple count files (e.g., from featureCounts), go to the **"📂 Merge Counts"** tab:
 
-```bash
-python merge_counts.py input/batch1.csv input/batch2.xlsx -o input/merged_counts.csv
-```
+1. **Upload Files**: Drag and drop your count files (`.txt`, `.csv`, `.xlsx`) into the file uploader.
+2. **Merge**: Click "Merge Files". The app will combine them into a single `merged_counts.csv` in the `input` folder.
 
 ## Batch Correction
 

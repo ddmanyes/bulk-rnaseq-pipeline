@@ -1,5 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 numpy>=2.1
 pandas>=2.2
+torch
 omicverse
 combat
 matplotlib

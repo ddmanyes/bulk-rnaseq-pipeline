@@ -1,9 +1,0 @@
-SampleID,Condition,Time,Type,Batch
-C_1,Control,0,Control,1
-C_2,Control,0,Control,1
-T_6_1,Treat_6h,6,Treat,1
-T_6_2,Treat_6h,6,Treat,1
-T_24_1,Treat_24h,24,Treat,1
-T_24_2,Treat_24h,24,Treat,1
-T_72_1,Treat_72h,72,Treat,1
-T_72_2,Treat_72h,72,Treat,1

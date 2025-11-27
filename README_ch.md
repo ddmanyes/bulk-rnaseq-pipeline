@@ -161,3 +161,16 @@ python merge_counts.py input/batch1.csv input/batch2.xlsx -o input/merged_counts
 - **圖表**：`PCA_plot.png`, `Volcano_*.png`, `Heatmap_*.png`, `TimeSeries_*.png`。
 - **數據**：`counts.csv`, `counts_batch_corrected.csv`, `DEG_*.csv`, `Master_Results_Table.csv`。
 - **富集分析**：`enrichment/` 資料夾，包含 GO/KEGG 分析的 dotplots 和 CSV。
+
+## 參考文獻與引用 (References)
+
+如果您在研究中使用了此流程，請考慮引用以下核心工具與套件：
+
+- **OmicVerse**: [https://github.com/StarlitOnes/OmicVerse](https://github.com/StarlitOnes/OmicVerse)
+- **GSEApy (Enrichr)**: Fang, Z., Liu, X., & Peltz, G. (2023). GSEApy: a comprehensive package for performing gene set enrichment analysis in Python. *Bioinformatics*.
+- **ComBat (Batch Correction)**: Johnson, W. E., Li, C., & Rabinovic, A. (2007). Adjusting batch effects in microarray expression data using empirical Bayes methods. *Biostatistics*.
+- **Streamlit**: [https://streamlit.io/](https://streamlit.io/)
+
+## 授權 (License)
+
+本專案採用 MIT License 授權 - 詳情請見 [LICENSE](LICENSE) 檔案。

@@ -175,3 +175,16 @@ The pipeline generates the following in the `output/` directory:
 - **Plots**: `PCA_plot.png`, `Volcano_*.png`, `Heatmap_*.png`, `TimeSeries_*.png`.
 - **Data**: `counts.csv`, `counts_batch_corrected.csv`, `DEG_*.csv`, `Master_Results_Table.csv`.
 - **Enrichment**: `enrichment/` folder containing dotplots and CSVs for GO/KEGG analysis.
+
+## References & Citations
+
+If you use this pipeline in your research, please consider citing the following tools and packages that made this work possible:
+
+- **OmicVerse**: [https://github.com/StarlitOnes/OmicVerse](https://github.com/StarlitOnes/OmicVerse)
+- **GSEApy (Enrichr)**: Fang, Z., Liu, X., & Peltz, G. (2023). GSEApy: a comprehensive package for performing gene set enrichment analysis in Python. *Bioinformatics*.
+- **ComBat (Batch Correction)**: Johnson, W. E., Li, C., & Rabinovic, A. (2007). Adjusting batch effects in microarray expression data using empirical Bayes methods. *Biostatistics*.
+- **Streamlit**: [https://streamlit.io/](https://streamlit.io/)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

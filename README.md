@@ -126,7 +126,21 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     - **📂 Merge Counts**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
     - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
     - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
-    - **📊 Interactive Visualization**: Explore gene expression with boxplots and view differential expression statistics for selected genes.
+    - **📊 Interactive Visualization**:    - Click **"Generate Boxplot"** to view the plot and the corresponding differential expression data.
+
+## References & Citations
+
+If you use this pipeline in your research, please consider citing the following tools and packages that made this work possible:
+
+- **OmicVerse**: [https://github.com/StarlitOnes/OmicVerse](https://github.com/StarlitOnes/OmicVerse)
+- **GSEApy (Enrichr)**: Fang, Z., Liu, X., & Peltz, G. (2023). GSEApy: a comprehensive package for performing gene set enrichment analysis in Python. *Bioinformatics*.
+- **ComBat (Batch Correction)**: Johnson, W. E., Li, C., & Rabinovic, A. (2007). Adjusting batch effects in microarray expression data using empirical Bayes methods. *Biostatistics*.
+- **Streamlit**: [https://streamlit.io/](https://streamlit.io/)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+tistics for selected genes.
     - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
     - **🧬 Pathway Analysis**: Explore enrichment analysis results (Dotplots) for different comparisons.
 

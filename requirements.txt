@@ -1,11 +1,12 @@
-pandas
+numpy>=2.1
+pandas>=2.2
 omicverse
 combat
 matplotlib
 torch_geometric
 openpyxl
 streamlit
-scipy
+scipy>=1.14
 seaborn
 PyYAML
 gseapy

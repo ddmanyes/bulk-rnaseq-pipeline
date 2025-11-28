@@ -123,6 +123,36 @@ The expected input is a **Gene Count Matrix** (e.g., from **featureCounts**), wh
 
 You can upload these `featureCounts.txt` files directly into the app!
 
+## ☁️ Hugging Face Spaces Usage
+
+This tool is deployed on Hugging Face Spaces for easy access. However, please note the following limitations and guidelines:
+
+### 1. Hardware & Performance Limits
+
+The free tier of Hugging Face Spaces provides **2 vCPU and 16GB RAM**.
+- **Suitable for**: Count Matrix analysis (DESeq2, Enrichment) with **< 100 samples**.
+- **Not Suitable for**: Alignment (STAR, HISAT2) or extremely large datasets (thousands of samples), which may cause **Out of Memory (OOM)** errors.
+- **Recommendation**: Please upload **Gene Count Matrices** only. Do not attempt to process raw FASTQ files or perform alignment here.
+
+### 2. Cold Start & Sleep Mechanism
+
+Free Spaces will go to **sleep** after a period of inactivity.
+- **Cold Start**: If you are the first user in a while, you may see a "Building" or "Starting" screen. Please **wait 1-3 minutes** for the server to wake up.
+
+### 3. Input Format & Demo Data
+
+To avoid errors, please ensure your input files match the expected format.
+- **Demo Data**: Click the **"📥 Load Demo Data"** button in the sidebar to see an example of a working dataset. You can download the generated `merged_counts.csv` to use as a template.
+- **Format**: The app expects **CSV** or **Tab-delimited** text files.
+
+### 4. Data Privacy & Disclaimer
+>
+> ⚠️ **Disclaimer**: This tool runs in a **public cloud environment**.
+>
+> - **Ephemeral**: Files are stored temporarily and deleted after the session restarts, but the environment is public.
+> - **Do NOT upload**: Patient Personally Identifiable Information (PII) or highly confidential unpublished data.
+> - **Usage**: Intended for academic research, testing, and educational purposes only.
+
 ## How to Run the Pipeline
 
 You can run the pipeline using the **Interactive GUI** (Recommended) or the **Command Line**.

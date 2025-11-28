@@ -52,6 +52,8 @@ st.title("🧬 Bulk RNA-seq Analysis Pipeline")
 # --- Sidebar: Demo Data ---
 with st.sidebar:
     st.header("🔧 Utility")
+    
+    st.warning("⚠️ **Privacy Note**: This app runs on a public cloud. Do NOT upload PII or confidential data.")
     if os.path.exists("demo_data"):
         if st.button("📥 Load Demo Data", help="Load pre-computed example data for testing."):
             try:

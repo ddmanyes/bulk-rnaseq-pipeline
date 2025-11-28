@@ -135,7 +135,7 @@ Hugging Face 免費版提供 **2 vCPU 和 16GB RAM**。
 
 為避免錯誤，請確保您的輸入檔案符合格式。
 
-- **範例數據**：點擊側邊欄的 **"📥 Load Demo Data"** 按鈕，可以載入一組範例數據。您可以下載生成的 `merged_counts.csv` 作為模板參考。
+- **範例數據**：點擊側邊欄的 **"📥 Load Demo Data"** 按鈕，可以載入一組範例數據。**這將會自動載入預先計算好的分析結果，讓您可以直接體驗互動式圖表功能。** 您也可以下載生成的 `merged_counts.csv` 作為模板參考。
 - **格式**：程式支援 **CSV** 或 **Tab 分隔** 的文字檔。
 
 ### 4. 數據隱私聲明
@@ -164,11 +164,11 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
     - **📂 Data Preprocessing (資料前處理)**：選擇包含多個計數檔案 (CSV, Excel, featureCounts) 的資料夾，並將它們合併為單一矩陣。
     - **📝 Metadata Creation (建立元數據)**：互動式地建立或編輯您的 `metadata.csv` 檔案。確保包含 `Condition`, `Time`, 和 `Type` 欄位。
     - **⚙️ Run Analysis (執行分析)**：設定所有分析參數 (檔案、閾值、批次校正等) 並點擊 **"Run Analysis Pipeline"**。您可以即時查看執行日誌。
-    - **📊 Interactive Visualization (互動式視覺化)**：
+    - **� Static Plots (靜態圖表)**：查看分析產生的所有預生成圖表 (PCA, 火山圖, 熱圖)。
+    - **🌋 Volcano Plot (火山圖)**：查看靜態火山圖，並透過互動式表格探索底層數據（依顯著性篩選、下載結果）。
+    - **�📊 Interactive Visualization (互動式視覺化)**：
         - **Boxplot (箱形圖)**：視覺化不同組別間的基因表現分佈。
         - **Heatmap (熱圖)**：透過 Z-score 標準化和可自訂的色階探索表現模式。
-    - **🌋 Volcano Plot (火山圖)**：查看靜態火山圖，並透過互動式表格探索底層數據（依顯著性篩選、下載結果）。
-    - **📈 Static Plots (靜態圖表)**：查看分析產生的所有預生成圖表 (PCA, 火山圖, 熱圖)。
     - **🧬 Pathway Analysis (通路分析)**：探索富集分析結果。選擇特定的比較和通路圖表（例如 GO Biological Process, KEGG）並下載結果表格。
 
 ### 選項 2：命令列工作流程

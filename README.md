@@ -147,7 +147,7 @@ Free Spaces will go to **sleep** after a period of inactivity.
 
 To avoid errors, please ensure your input files match the expected format.
 
-- **Demo Data**: Click the **"📥 Load Demo Data"** button in the sidebar to see an example of a working dataset. You can download the generated `merged_counts.csv` to use as a template.
+- **Demo Data**: Click the **"📥 Load Demo Data"** button in the sidebar to see an example of a working dataset. **This will populate the dashboard with pre-computed results, allowing you to explore visualizations immediately.** You can also download the generated `merged_counts.csv` to use as a template.
 - **Format**: The app expects **CSV** or **Tab-delimited** text files.
 
 ### 4. Data Privacy & Disclaimer
@@ -176,11 +176,11 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     - **📂 Data Preprocessing**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
     - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
     - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
+    - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
+    - **🌋 Volcano Plot**: View static Volcano Plots and explore the underlying data with an interactive table (filter by significance, download results).
     - **📊 Interactive Visualization**:
         - **Boxplot**: Visualize gene expression distribution across groups.
         - **Heatmap**: Explore expression patterns with Z-score normalization and customizable color scales.
-    - **🌋 Volcano Plot**: View static Volcano Plots and explore the underlying data with an interactive table (filter by significance, download results).
-    - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
     - **🧬 Pathway Analysis**: Explore enrichment analysis results. Select specific comparisons and pathway plots (e.g., GO Biological Process, KEGG) and download result tables.
 
 ### Option 2: Command Line Workflow

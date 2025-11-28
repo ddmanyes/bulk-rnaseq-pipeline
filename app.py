@@ -85,7 +85,7 @@ with st.sidebar:
 config = load_config()
 
 # Create Tabs
-tab_merge, tab0, tab1, tab2, tab_volcano, tab3, tab4 = st.tabs(["📂 Data Preprocessing", "📝 Metadata Creation", "⚙️ Run Analysis", "📊 Interactive Visualization", "🌋 Volcano Plot", "📈 Static Plots", "🧬 Pathway Analysis"])
+tab_merge, tab0, tab1, tab3, tab_volcano, tab2, tab4 = st.tabs(["📂 Data Preprocessing", "📝 Metadata Creation", "⚙️ Run Analysis", "📈 Static Plots", "🌋 Volcano Plot", "📊 Interactive Visualization", "🧬 Pathway Analysis"])
 
 # ==========================================
 # TAB MERGE: Data Preprocessing
@@ -737,7 +737,7 @@ with tab3:
     
     # Find all PNGs in output directory
     if os.path.exists(OUTPUT_DIR):
-        png_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.png')]
+        png_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.png') and not f.startswith('Volcano_')]
         
         if png_files:
             col_sel, col_slider = st.columns([3, 1])

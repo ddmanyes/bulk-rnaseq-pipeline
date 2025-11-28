@@ -99,6 +99,18 @@ cd bulk-rnaseq-pipeline
 - **如果自動安裝失敗**：請嘗試先手動安裝 PyTorch（請參考 [pytorch.org](https://pytorch.org/get-started/locally/) 的說明），然後再執行 `pip install -r requirements.txt`。
 - **CPU 與 GPU**：預設安裝通常包含 PyTorch 的 CPU 版本，這對於此分析流程已經足夠。
 
+## 輸入數據來源說明
+
+本流程專注於 **下游分析 (Downstream Analysis)**，意即從序列比對與定量完成後的數據開始。
+
+預期的輸入格式為 **基因計數矩陣 (Gene Count Matrix)**（例如來自 **featureCounts** 的輸出），這通常是由以下標準上游流程產生的：
+
+1. **品質控制 (QC)**：使用 FastQC, Trimmomatic 清理原始序列。
+2. **序列比對 (Alignment)**：使用 STAR 或 HISAT2 將序列比對回參考基因組 (產生 `.bam` 檔)。
+3. **定量 (Quantification)**：使用 **featureCounts** 或 htseq-count 計算每個基因的 Read 數 (產生 `.txt` 檔)。
+
+您可以直接將這些 `featureCounts.txt` 檔案上傳到 App 中進行分析！
+
 ## 如何執行流程
 
 您可以使用 **互動式 GUI** (推薦) 或 **命令列** 來執行流程。

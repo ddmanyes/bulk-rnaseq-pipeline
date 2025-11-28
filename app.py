@@ -434,7 +434,17 @@ with tab2:
     st.header("Interactive Results Viewer")
     
     # --- Helper to load data ---
-    COUNTS_FILE = os.path.join(config.get('files', {}).get('output_dir', 'output'), "counts.csv")
+    OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
+    
+    # Check for batch corrected data first
+    BATCH_CORRECTED_FILE = os.path.join(OUTPUT_DIR, "counts_batch_corrected.csv")
+    RAW_COUNTS_FILE = os.path.join(OUTPUT_DIR, "counts.csv")
+    
+    if os.path.exists(BATCH_CORRECTED_FILE):
+        COUNTS_FILE = BATCH_CORRECTED_FILE
+        st.info(f"Using Batch Corrected Data: `{os.path.basename(COUNTS_FILE)}`")
+    else:
+        COUNTS_FILE = RAW_COUNTS_FILE
     METADATA_FILE = config.get('files', {}).get('metadata', 'input/metadata.csv')
     OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
 

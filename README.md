@@ -173,7 +173,7 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     ```
 
 2. **Navigate the Tabs**:
-    - **📂 Merge Counts**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
+    - **📂 Data Preprocessing**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
     - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
     - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
     - **📊 Interactive Visualization**:

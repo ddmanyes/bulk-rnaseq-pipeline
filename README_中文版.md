@@ -22,7 +22,7 @@
 
 ```
 ├── input/
-│   ├── KwtfWz_TS241219002_featureCount.txt  # 您的原始 featureCounts 數據
+│   ├── featureCount files                   # 您的原始 featureCounts 數據
 │   └── metadata.csv                         # 樣本元數據 (Condition, Time, Type)
 ├── genesets/
 │   └── pair_GRCm39.tsv                      # 基因註釋檔案
@@ -161,7 +161,7 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
     ```
 
 2. **瀏覽分頁**：
-    - **📂 Merge Counts (合併計數)**：選擇包含多個計數檔案 (CSV, Excel, featureCounts) 的資料夾，並將它們合併為單一矩陣。
+    - **📂 Data Preprocessing (資料前處理)**：選擇包含多個計數檔案 (CSV, Excel, featureCounts) 的資料夾，並將它們合併為單一矩陣。
     - **📝 Metadata Creation (建立元數據)**：互動式地建立或編輯您的 `metadata.csv` 檔案。確保包含 `Condition`, `Time`, 和 `Type` 欄位。
     - **⚙️ Run Analysis (執行分析)**：設定所有分析參數 (檔案、閾值、批次校正等) 並點擊 **"Run Analysis Pipeline"**。您可以即時查看執行日誌。
     - **📊 Interactive Visualization (互動式視覺化)**：

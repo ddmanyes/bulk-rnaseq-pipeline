@@ -271,7 +271,7 @@ with tab1:
 
         st.subheader("🧪 Batch Correction")
         # Batch Correction
-        batch_cfg = files_cfg.get('batch_correction', {})
+        batch_cfg = config.get('files', {}).get('batch_correction', {})
         batch_enabled = st.checkbox("Enable Batch Correction", value=batch_cfg.get('enabled', False))
         batch_key = st.text_input("Batch Key (Column in Metadata)", value=batch_cfg.get('batch_key', 'Batch'))
 

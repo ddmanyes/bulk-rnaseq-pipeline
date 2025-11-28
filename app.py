@@ -274,6 +274,7 @@ with tab1:
         batch_cfg = config.get('files', {}).get('batch_correction', {})
         batch_enabled = st.checkbox("Enable Batch Correction", value=batch_cfg.get('enabled', False))
         batch_key = st.text_input("Batch Key (Column in Metadata)", value=batch_cfg.get('batch_key', 'Batch'))
+        st.info("ℹ️ **Method**: Uses **ComBat** (via `omicverse` / `combat`) to adjust for batch effects. It normalizes the data to remove technical variation while preserving biological differences.")
 
     with col2:
         st.subheader("🔬 Analysis Parameters")

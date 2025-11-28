@@ -69,19 +69,6 @@ with st.sidebar:
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to load demo data: {e}")
-    st.markdown("---")
-    st.subheader("📤 Upload Data")
-    uploaded_general_files = st.file_uploader("Upload to 'input' folder", accept_multiple_files=True, help="Upload metadata.csv, counts.csv, or other input files directly.")
-    
-    if uploaded_general_files:
-        if not os.path.exists("input"):
-            os.makedirs("input")
-        
-        for uploaded_file in uploaded_general_files:
-            file_path = os.path.join("input", uploaded_file.name)
-            with open(file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            st.toast(f"Saved: {uploaded_file.name}")
 
 # Load initial config
 config = load_config()

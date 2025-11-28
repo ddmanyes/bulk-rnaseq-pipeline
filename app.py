@@ -71,6 +71,14 @@ with st.sidebar:
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to load demo data: {e}")
+        
+        st.markdown("---")
+        st.markdown("""
+        **Acknowledgement**
+        
+        Demo data courtesy of **Prof. Sung-Jan Lin's Lab**, 
+        *Institute of Biomedical Engineering, NTU*.
+        """)
 
 # Load initial config
 config = load_config()

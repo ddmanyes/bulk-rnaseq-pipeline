@@ -56,6 +56,7 @@ with st.sidebar:
     st.warning("⚠️ **Privacy Note**: This app runs on a public cloud. Do NOT upload PII or confidential data.")
     if os.path.exists("demo_data"):
         if st.button("📥 Load Demo Data", help="Load pre-computed example data for testing."):
+            st.caption("Loads pre-computed results for immediate visualization.")
             try:
                 # Copy input
                 if not os.path.exists("input"): os.makedirs("input")

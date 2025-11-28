@@ -824,7 +824,7 @@ if __name__ == "__main__":
 
     # 1. Preprocess
     counts_matrix = preprocess_data(
-        feature_counts_file=files_cfg['feature_counts'],
+        feature_counts_file=files_cfg.get('input', files_cfg.get('feature_counts')),
         gene_annotation_file=files_cfg['gene_annotation'],
         output_dir=output_dir
     )

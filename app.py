@@ -423,6 +423,7 @@ with tab1:
             if process.returncode == 0:
                 st.success("✅ Pipeline completed successfully!")
                 st.balloons()
+                st.cache_data.clear() # Clear cache to force reload of new data
             else:
                 st.error("❌ Pipeline failed. Check the logs above.")
                 st.code(full_logs) # Show full logs on error

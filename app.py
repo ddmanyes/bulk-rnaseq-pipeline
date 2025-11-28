@@ -87,14 +87,14 @@ with st.sidebar:
 config = load_config()
 
 # Create Tabs
-tab_merge, tab0, tab1, tab2, tab_volcano, tab3, tab4 = st.tabs(["📂 Merge Counts", "📝 Metadata Creation", "⚙️ Run Analysis", "📊 Interactive Visualization", "🌋 Volcano Plot", "📈 Static Plots", "🧬 Pathway Analysis"])
+tab_merge, tab0, tab1, tab2, tab_volcano, tab3, tab4 = st.tabs(["📂 Data Preprocessing", "📝 Metadata Creation", "⚙️ Run Analysis", "📊 Interactive Visualization", "🌋 Volcano Plot", "📈 Static Plots", "🧬 Pathway Analysis"])
 
 # ==========================================
-# TAB MERGE: Merge Count Files
+# TAB MERGE: Data Preprocessing
 # ==========================================
 with tab_merge:
-    st.header("Merge Count Matrices")
-    st.markdown("Combine multiple count files (CSV, Excel, featureCounts) into a single matrix for analysis.")
+    st.header("Data Preprocessing (Merge & Clean)")
+    st.markdown("Upload multiple count files (CSV, Excel, featureCounts) to clean and merge them into a single matrix for analysis.")
     
     st.markdown("Combine multiple count files (CSV, Excel, featureCounts) into a single matrix for analysis.")
     
@@ -254,14 +254,20 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📁 File Paths")
-        # Files
-        files_cfg = config.get('files', {})
-        feature_counts_path = st.text_input("Feature Counts File", value=files_cfg.get('feature_counts', 'input/featureCounts.txt'))
-        gene_annotation_path = st.text_input("Gene Annotation File", value=files_cfg.get('gene_annotation', 'genesets/pair_GRCm39.tsv'))
-        # Metadata path input - sync with Tab 0 implicitly by reading config
-        metadata_path = st.text_input("Metadata File", value=files_cfg.get('metadata', 'input/metadata.csv'), help="Path where metadata is saved (see 'Metadata Creation' tab)")
-        output_dir_path = st.text_input("Output Directory", value=files_cfg.get('output_dir', 'output'))
+        st.subheader("1. File Paths")
+    
+        # Default to merged_counts.csv
+        default_input_path = "input/merged_counts.csv"
+        config['files']['input'] = default_input_path
+        
+        if os.path.exists(default_input_path):
+            st.success(f"Using input file: `{default_input_path}`")
+        else:
+            st.warning(f"Input file `{default_input_path}` not found. Please merge files in 'Data Preprocessing' tab first.")
+
+        config['files']['metadata'] = st.text_input("Metadata File", value=config.get('files', {}).get('metadata', 'input/metadata.csv'))
+        gene_annotation_path = st.text_input("Gene Annotation File", value=config.get('files', {}).get('gene_annotation', 'genesets/pair_GRCm39.tsv'))
+        output_dir_path = st.text_input("Output Directory", value=config.get('files', {}).get('output_dir', 'output'))
 
         st.subheader("🧪 Batch Correction")
         # Batch Correction

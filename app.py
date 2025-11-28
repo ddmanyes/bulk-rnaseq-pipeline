@@ -347,7 +347,7 @@ with tab1:
 
     # --- Construct Config Object Dynamically ---
     new_config = config.copy()
-    new_config['files']['feature_counts'] = feature_counts_path
+    # new_config['files']['feature_counts'] = feature_counts_path # Deprecated
     new_config['files']['gene_annotation'] = gene_annotation_path
     new_config['files']['metadata'] = metadata_path
     new_config['files']['output_dir'] = output_dir_path

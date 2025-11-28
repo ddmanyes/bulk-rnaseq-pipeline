@@ -125,11 +125,14 @@ You can upload these `featureCounts.txt` files directly into the app!
 
 ## ☁️ Hugging Face Spaces Usage
 
+**🔗 App Link:** [https://huggingface.co/spaces/chanchiru/bulk-rnaseq-pipeline](https://huggingface.co/spaces/chanchiru/bulk-rnaseq-pipeline)
+
 This tool is deployed on Hugging Face Spaces for easy access. However, please note the following limitations and guidelines:
 
 ### 1. Hardware & Performance Limits
 
 The free tier of Hugging Face Spaces provides **2 vCPU and 16GB RAM**.
+
 - **Suitable for**: Count Matrix analysis (DESeq2, Enrichment) with **< 100 samples**.
 - **Not Suitable for**: Alignment (STAR, HISAT2) or extremely large datasets (thousands of samples), which may cause **Out of Memory (OOM)** errors.
 - **Recommendation**: Please upload **Gene Count Matrices** only. Do not attempt to process raw FASTQ files or perform alignment here.
@@ -137,11 +140,13 @@ The free tier of Hugging Face Spaces provides **2 vCPU and 16GB RAM**.
 ### 2. Cold Start & Sleep Mechanism
 
 Free Spaces will go to **sleep** after a period of inactivity.
+
 - **Cold Start**: If you are the first user in a while, you may see a "Building" or "Starting" screen. Please **wait 1-3 minutes** for the server to wake up.
 
 ### 3. Input Format & Demo Data
 
 To avoid errors, please ensure your input files match the expected format.
+
 - **Demo Data**: Click the **"📥 Load Demo Data"** button in the sidebar to see an example of a working dataset. You can download the generated `merged_counts.csv` to use as a template.
 - **Format**: The app expects **CSV** or **Tab-delimited** text files.
 

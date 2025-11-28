@@ -113,11 +113,14 @@ cd bulk-rnaseq-pipeline
 
 ## ☁️ Hugging Face Spaces 使用說明
 
+**🔗 App 連結:** [https://huggingface.co/spaces/chanchiru/bulk-rnaseq-pipeline](https://huggingface.co/spaces/chanchiru/bulk-rnaseq-pipeline)
+
 本工具已部署於 Hugging Face Spaces 供您直接使用。但請注意以下限制與使用規範：
 
 ### 1. 硬體資源與效能限制
 
 Hugging Face 免費版提供 **2 vCPU 和 16GB RAM**。
+
 - **適用範圍**：Count Matrix 下游分析 (DESeq2, Enrichment)，建議樣本數 **< 100**。
 - **不適用**：序列比對 (Alignment, 如 STAR/HISAT2) 或超大數據集 (數千個樣本)，這會導致記憶體不足 (OOM) 而崩潰。
 - **建議**：請僅上傳 **Gene Count Matrix**。請勿嘗試在此進行 Raw FASTQ 的比對工作。
@@ -125,11 +128,13 @@ Hugging Face 免費版提供 **2 vCPU 和 16GB RAM**。
 ### 2. 冷啟動 (Cold Start) 與休眠機制
 
 免費版 Spaces 在閒置一段時間後會自動 **休眠 (Sleep)**。
+
 - **冷啟動**：如果您是近期第一位使用者，可能會看到 "Building" 或 "Starting" 畫面。請耐心 **等待 1-3 分鐘** 讓伺服器喚醒。
 
 ### 3. 輸入格式與範例數據
 
 為避免錯誤，請確保您的輸入檔案符合格式。
+
 - **範例數據**：點擊側邊欄的 **"📥 Load Demo Data"** 按鈕，可以載入一組範例數據。您可以下載生成的 `merged_counts.csv` 作為模板參考。
 - **格式**：程式支援 **CSV** 或 **Tab 分隔** 的文字檔。
 

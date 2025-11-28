@@ -349,7 +349,7 @@ with tab1:
     new_config = config.copy()
     # new_config['files']['feature_counts'] = feature_counts_path # Deprecated
     new_config['files']['gene_annotation'] = gene_annotation_path
-    new_config['files']['metadata'] = metadata_path
+    new_config['files']['metadata'] = config['files']['metadata']
     new_config['files']['output_dir'] = output_dir_path
     new_config['files']['batch_correction'] = {'enabled': batch_enabled, 'batch_key': batch_key}
     

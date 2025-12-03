@@ -50,7 +50,7 @@ def run_pipeline():
         # Run the script and capture output
         # Pass the session config path as argument
         process = subprocess.Popen(
-            ["python", "analysis_pipeline.py", CONFIG_FILE],
+            [sys.executable, "analysis_pipeline.py", CONFIG_FILE],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

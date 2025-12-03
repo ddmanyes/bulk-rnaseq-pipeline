@@ -28,8 +28,9 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 - **Enrichment Analysis**: Performs Over-Representation Analysis (ORA) against multiple databases (e.g., GO, KEGG, Reactome) and generates dot plots for results.
 - **Time-Series Clustering**: Identifies co-expressed gene modules in time-course data using K-means clustering and visualizes their trends.
 - **Fully Configurable**: Easily manage all file paths, analysis parameters, and thresholds in one central `config.yml` file.
-- **Interactive Explorer**: Includes a Streamlit web app to dynamically explore gene expression via Boxplots and Interactive Heatmaps.
-- **Data Export**: Easily download processed data, differential expression results, and pathway analysis tables directly from the app.
+- **Interactive Explorer**: Includes a Streamlit web app to dynamically explore gene expression via Boxplots.
+- **Data & Image Export**: Easily download processed data, differential expression results, pathway analysis tables, and **high-quality plot images (PNG)** directly from the app.
+- **Standalone Mac Installer**: Includes a one-click installer (`install_and_run_mac.command`) for macOS users, requiring no manual Python setup.
 - **Reproducible**: Bundled with a `requirements.txt` file to ensure a consistent environment.
 - **Kallisto Integration**: Includes a helper script to aggregate Kallisto transcript abundance into a gene-level count matrix compatible with this pipeline.
 
@@ -83,6 +84,17 @@ cd bulk-rnaseq-pipeline
 2. Click the green **Code** button.
 3. Select **Download ZIP**.
 4. Unzip the downloaded file to your desired folder.
+
+## 🚀 Easy Installation for macOS (No Coding Required)
+
+If you are on macOS and don't want to deal with Python environments manually, use the included **One-Click Installer**:
+
+1. Download the project (ZIP or Git).
+2. Double-click **`install_and_run_mac.command`**.
+3. Wait for the automatic setup (first time only). It will:
+    - Download a lightweight environment manager (Micromamba).
+    - Install all necessary dependencies locally in the project folder.
+    - Launch the App automatically.
 
 ## Manual Setup and Installation
 

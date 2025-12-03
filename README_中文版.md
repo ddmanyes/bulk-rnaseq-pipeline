@@ -16,8 +16,9 @@
 - **富集分析**：針對多個資料庫 (如 GO, KEGG, Reactome) 執行過度表現分析 (ORA)，並生成結果的點圖 (Dot Plots)。
 - **時間序列分群**：使用 K-means 分群法識別時間序列數據中共同表現的基因模組，並視覺化其趨勢。
 - **完全可配置**：在一個中央 `config.yml` 檔案中輕鬆管理所有檔案路徑、分析參數和閾值。
-- **互動式瀏覽器**：包含一個 Streamlit 網頁應用程式，可透過箱形圖 (Boxplots) 和互動式熱圖 (Interactive Heatmaps) 動態探索基因表現。
-- **數據導出**：可直接從應用程式下載處理後的數據、差異表現結果和通路分析表格。
+- **互動式瀏覽器**：包含一個 Streamlit 網頁應用程式，可透過箱形圖 (Boxplots) 動態探索基因表現。
+- **數據與圖片導出**：可直接從應用程式下載處理後的數據、差異表現結果、通路分析表格，以及**高品質的圖表圖片 (PNG)**。
+- **Mac 一鍵安裝**：內建 macOS 專用的一鍵安裝檔 (`install_and_run_mac.command`)，無需手動設定 Python 環境。
 - **可重現性**：附帶 `requirements.txt` 檔案，確保環境的一致性。
 - **Kallisto 整合**：包含一個輔助腳本，可將 Kallisto 的轉錄本豐度 (transcript abundance) 聚合為與此流程相容的基因級計數矩陣 (gene-level count matrix)。
 
@@ -71,6 +72,17 @@ cd bulk-rnaseq-pipeline
 2. 點擊綠色的 **Code** 按鈕。
 3. 選擇 **Download ZIP**。
 4. 將下載的檔案解壓縮到您想要的資料夾。
+
+## 🚀 Mac 一鍵安裝 (無需寫程式)
+
+如果您使用的是 macOS，且不想手動處理 Python 環境，請使用內附的 **一鍵安裝檔**：
+
+1. 下載此專案 (ZIP 或 Git)。
+2. 雙擊 **`install_and_run_mac.command`**。
+3. 等待自動設定完成 (僅第一次需要)。它會：
+    - 下載輕量級的環境管理器 (Micromamba)。
+    - 在專案資料夾內安裝所有必要的套件。
+    - 自動啟動應用程式。
 
 ## 手動設定與安裝
 

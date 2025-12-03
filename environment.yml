@@ -1,0 +1,22 @@
+name: omicverse_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pandas
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - statsmodels
+  - pytables
+  - pip:
+    - streamlit
+    - omicverse
+    - scanpy
+    - leidenalg
+    - openpyxl

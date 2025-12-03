@@ -673,6 +673,19 @@ with tab2:
                     
                     st.pyplot(fig)
                     
+                    # Save plot to buffer for download
+                    import io
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format="png", dpi=300, bbox_inches='tight')
+                    buf.seek(0)
+                    
+                    st.download_button(
+                        label="Download Plot (PNG)",
+                        data=buf,
+                        file_name="Gene_Expression_Boxplot.png",
+                        mime="image/png"
+                    )
+                    
                 except Exception as e:
                     st.error(f"Plotting error: {e}")
 
@@ -747,6 +760,14 @@ with tab_volcano:
             if selected_comp_volcano:
                 png_path = file_map[selected_comp_volcano]
                 st.image(png_path, caption=os.path.basename(png_path), width=volcano_width)
+                
+                with open(png_path, "rb") as f:
+                    st.download_button(
+                        label="Download Plot (PNG)",
+                        data=f,
+                        file_name=os.path.basename(png_path),
+                        mime="image/png"
+                    )
                 
                 # --- Data Table ---
                 st.markdown("---")
@@ -835,7 +856,16 @@ with tab3:
                 img_width = st.slider("Image Width", min_value=300, max_value=2000, value=800, step=50, key="static_width")
             
             if selected_plot:
-                st.image(os.path.join(OUTPUT_DIR, selected_plot), caption=selected_plot, width=img_width)
+                plot_path = os.path.join(OUTPUT_DIR, selected_plot)
+                st.image(plot_path, caption=selected_plot, width=img_width)
+                
+                with open(plot_path, "rb") as f:
+                    st.download_button(
+                        label="Download Plot (PNG)",
+                        data=f,
+                        file_name=selected_plot,
+                        mime="image/png"
+                    )
         else:
             st.info("No plot images found in output directory.")
     else:
@@ -880,7 +910,16 @@ with tab4:
                     
                     if selected_plot_name:
                         plot_file = plot_map[selected_plot_name]
-                        st.image(os.path.join(comp_dir, plot_file), width=enrich_width)
+                        plot_path = os.path.join(comp_dir, plot_file)
+                        st.image(plot_path, width=enrich_width)
+                        
+                        with open(plot_path, "rb") as f:
+                            st.download_button(
+                                label="Download Plot (PNG)",
+                                data=f,
+                                file_name=plot_file,
+                                mime="image/png"
+                            )
                         
                         # Optional: Check for corresponding CSV
                         # Pattern: {name}.csv (without Dotplot_)

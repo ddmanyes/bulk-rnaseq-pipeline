@@ -22,3 +22,4 @@ dependencies:
     - leidenalg
     - openpyxl
     - torch-geometric
+    - gseapy

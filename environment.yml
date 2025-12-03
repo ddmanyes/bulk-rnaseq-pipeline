@@ -15,10 +15,10 @@ dependencies:
   - statsmodels
   - pytables
   - pytorch
-  - pyg
   - pip:
     - streamlit
     - omicverse
     - scanpy
     - leidenalg
     - openpyxl
+    - torch-geometric

@@ -18,6 +18,9 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 
 ## Key Features
 
+- **Session Isolation**: Ensures data privacy on shared hosting (e.g., Hugging Face Spaces) by using unique temporary directories for each user session.
+- **Customizable Metadata**: Supports custom time column names (e.g., "Stage", "Day") and non-numeric time points.
+- **Auto-Sync Metadata**: One-click synchronization of Sample IDs from the count matrix to the metadata table.
 - **End-to-End Analysis**: From raw counts to final plots with one command.
 - **Principal Component Analysis (PCA)**: Generates a PCA plot to visualize sample-level relationships and batch effects based on overall gene expression.
 - **Batch Correction**: Integrated ComBat batch correction to remove unwanted technical variation, with automatic "Before vs After" visualization.
@@ -32,7 +35,7 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 
 ## Project Structure
 
-```
+```text
 ├── input/
 │   ├── featureCount files                  # Your raw featureCounts data
 │   └── metadata.csv                        # Sample metadata (Condition, Time, Type)
@@ -154,7 +157,8 @@ To avoid errors, please ensure your input files match the expected format.
 >
 > ⚠️ **Disclaimer**: This tool runs in a **public cloud environment**.
 >
-> - **Ephemeral**: Files are stored temporarily and deleted after the session restarts, but the environment is public.
+> - **Session Isolation**: We have implemented session isolation. Each user gets a unique temporary directory, ensuring your data is **NOT** visible to other concurrent users.
+> - **Ephemeral**: Files are stored temporarily and deleted after the session ends.
 > - **Do NOT upload**: Patient Personally Identifiable Information (PII) or highly confidential unpublished data.
 > - **Usage**: Intended for academic research, testing, and educational purposes only.
 
@@ -174,13 +178,18 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
 
 2. **Navigate the Tabs**:
     - **📂 Data Preprocessing**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
-    - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively. Ensure you have `Condition`, `Time`, and `Type` columns.
-    - **⚙️ Run Analysis**: Configure all analysis parameters (files, thresholds, batch correction, etc.) and click **"Run Analysis Pipeline"**. You can see real-time logs of the execution.
+    - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively.
+        - **Sync Sample IDs**: Automatically populate sample IDs from your merged count matrix.
+        - **Select Samples**: Use the **"Include"** checkbox to choose which samples to save. Unchecked samples will be excluded.
+        - **Optional Time Column**: Toggle **"Include Time Column"** to enable/disable time-series features. If disabled, Time-Series Analysis will be skipped.
+        - **Custom Time Column**: You can rename the "Time" column (e.g., to "Stage") and use text values.
+    - **⚙️ Run Analysis**: Configure all analysis parameters.
+        - **Gene Annotation**: Select the correct annotation file for your species from the dropdown menu.
+        - Click **"Run Analysis Pipeline"** to start. You can see real-time logs of the execution.
     - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
     - **🌋 Volcano Plot**: View static Volcano Plots and explore the underlying data with an interactive table (filter by significance, download results).
     - **📊 Interactive Visualization**:
         - **Boxplot**: Visualize gene expression distribution across groups.
-        - **Heatmap**: Explore expression patterns with Z-score normalization and customizable color scales.
     - **🧬 Pathway Analysis**: Explore enrichment analysis results. Select specific comparisons and pathway plots (e.g., GO Biological Process, KEGG) and download result tables.
 
 ### Option 2: Command Line Workflow

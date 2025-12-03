@@ -1,5 +1,5 @@
 files:
-  feature_counts: input/KwtfWz_TS241219002_featureCount.txt
+  input: input/merged_counts.csv
   gene_annotation: genesets/pair_GRCm39.tsv
   metadata: input/metadata.csv
   output_dir: output
@@ -19,9 +19,9 @@ analysis:
     species: Mouse
     top_terms_to_plot: 15
     libraries:
-      GO: GO_Biological_Process_2023
-      KEGG: KEGG_2019_Mouse
       Reactome: Reactome_2022
+      KEGG: KEGG_2019_Mouse
+      GO_Biological: GO_Biological_Process_2023
   time_series:
     enabled: true
     num_clusters: 4

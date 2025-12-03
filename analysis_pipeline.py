@@ -79,7 +79,7 @@ def preprocess_data(feature_counts_file, gene_annotation_file, output_dir):
     return counts_matrix
 
 # --- Step 2: Metadata Creation/Loading ---
-def load_metadata(metadata_file, output_dir):
+def load_metadata(metadata_file, output_dir, cfg):
     """
     Loads metadata from a file or creates a default one if missing.
     """
@@ -114,9 +114,23 @@ def load_metadata(metadata_file, output_dir):
         print(f"  - Default metadata saved to '{metadata_file}'")
 
     # Ensure required columns exist
-    required_cols = ['Condition', 'Time', 'Type']
+    required_cols = ['Condition', 'Type']
+    
+    # Check if Time Series is enabled and what the column name is
+    ts_cfg = cfg.get('analysis', {}).get('time_series', {})
+    if ts_cfg.get('enabled', True):
+        time_col = ts_cfg.get('time_column', 'Time')
+        # Only require it if it's supposed to be present
+        if ts_cfg.get('time_column_present', True):
+            required_cols.append(time_col)
+
     missing = [c for c in required_cols if c not in metadata.columns]
     if missing:
+        # If Time is missing but we expected it, try to be helpful
+        if 'Time' in missing and 'Time' not in metadata.columns:
+             # Check if maybe the user renamed it in the file but didn't update config?
+             # For now, just raise error as before but with better logic
+             pass
         raise ValueError(f"Metadata file is missing required columns: {missing}")
 
     # Save a copy to output for reference
@@ -579,21 +593,35 @@ def _get_timeseries_data_for_clustering(norm_counts, metadata, cfg):
     """Internal helper to prepare data for clustering and evaluation."""
     ts_cfg = cfg.get('analysis', {}).get('time_series', {})
     top_n = ts_cfg.get('top_n_genes', 200)
+    time_col = ts_cfg.get('time_column', 'Time') # Default to 'Time'
 
     # Select only treatment samples
     treat_samples = metadata[metadata['Type'] == 'Treat'].index
     treat_counts = norm_counts[treat_samples]
     treat_meta = metadata.loc[treat_samples]
 
-    # Average replicates based on time
-    time_avg_counts = treat_counts.T.groupby(treat_meta['Time']).mean().T
+    # Average replicates based on time column
+    if time_col not in treat_meta.columns:
+        print(f"⚠️ Warning: Time column '{time_col}' not found in metadata. Using 'Time' if available.")
+        time_col = 'Time' if 'Time' in treat_meta.columns else treat_meta.columns[1] # Fallback
+    
+    time_avg_counts = treat_counts.T.groupby(treat_meta[time_col]).mean().T
+    
+    # Check if we have enough time points
+    if time_avg_counts.shape[1] < 2:
+        print(f"⚠️ Warning: Not enough time points for time-series analysis. Found {time_avg_counts.shape[1]}, need at least 2.")
+        return None
     
     # Select top N variable genes
     top_genes = time_avg_counts.var(axis=1).nlargest(top_n).index
     plot_data = time_avg_counts.loc[top_genes]
 
     # Z-score standardization
-    zscore_data = pd.DataFrame(stats.zscore(plot_data, axis=1), index=plot_data.index, columns=plot_data.columns)
+    # Use nan_policy='omit' or handle NaNs after.
+    # If a gene has constant expression across time points, std is 0 -> zscore is NaN.
+    # We fill these with 0 to avoid clustering errors.
+    zscore_data = pd.DataFrame(stats.zscore(plot_data, axis=1, nan_policy='omit'), index=plot_data.index, columns=plot_data.columns)
+    zscore_data = zscore_data.fillna(0)
     return zscore_data
 
 # --- Time-Series K-Value Evaluation ---
@@ -603,6 +631,11 @@ def evaluate_clustering_k(norm_counts, metadata, cfg, max_k):
     """
     print("\n--- Evaluating Optimal K for Time-Series Clustering ---")
     data_for_clustering = _get_timeseries_data_for_clustering(norm_counts, metadata, cfg)
+    
+    if data_for_clustering is None:
+        print("Skipping K-evaluation due to insufficient data.")
+        return
+
     output_dir = cfg['files']['output_dir']
     
     k_range = range(2, max_k + 1)
@@ -644,7 +677,7 @@ def evaluate_clustering_k(norm_counts, metadata, cfg, max_k):
     print("-" * 40)
 
 # --- Step 8: Time-Series Analysis ---
-def run_timeseries_analysis(norm_counts, metadata, cfg):
+def run_timeseries_analysis(norm_counts, metadata, cfg, output_dir):
     """
     Performs time-series clustering and generates a combined trend and heatmap plot.
     Optimized for dynamic layout and better visualization.
@@ -657,7 +690,7 @@ def run_timeseries_analysis(norm_counts, metadata, cfg):
 
     # --- 1. Get Parameters ---
     n_clusters = ts_cfg.get('num_clusters', 4)
-    output_dir = cfg['files']['output_dir']
+    # output_dir is passed as argument
     output_file = os.path.join(output_dir, f"TimeSeries_Clustering_k{n_clusters}.png")
 
     print(f"Running with {n_clusters} clusters...")
@@ -665,14 +698,26 @@ def run_timeseries_analysis(norm_counts, metadata, cfg):
     # --- 2. Prepare Data (With Robust Sorting) ---
     zscore_data = _get_timeseries_data_for_clustering(norm_counts, metadata, cfg)
     
-    # 嘗試將列名轉為數字進行排序，避免 "10h" 排在 "2h" 前面的字串排序問題
+    if zscore_data is None:
+        print("Skipping Time-Series Analysis due to insufficient data.")
+        return None
+    
+    # Try to sort numerically if possible, otherwise string sort
     try:
         sorted_cols = sorted(zscore_data.columns, key=lambda x: float(x))
+        is_numeric_time = True
     except ValueError:
         sorted_cols = sorted(zscore_data.columns) # Fallback to string sort
+        is_numeric_time = False
         
     zscore_data = zscore_data[sorted_cols] # Reorder dataframe columns
-    time_points = [f"{t}h" for t in sorted_cols]
+    
+    # Add suffix only if numeric, otherwise use value as is
+    if is_numeric_time:
+        time_points = [f"{t}h" for t in sorted_cols]
+    else:
+        time_points = [str(t) for t in sorted_cols]
+        
     zscore_data.columns = time_points
 
     # --- 3. K-Means Clustering ---
@@ -810,8 +855,15 @@ def run_timeseries_analysis(norm_counts, metadata, cfg):
 
 # --- Main Execution Logic ---
 if __name__ == "__main__":
+    import sys
+    
     # Load configuration
-    config = load_config()
+    config_path = 'config.yml'
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+        print(f"Using config file: {config_path}")
+    
+    config = load_config(config_path)
     files_cfg = config['files']
     analysis_cfg = config['analysis']
     
@@ -832,7 +884,8 @@ if __name__ == "__main__":
     # 2. Load metadata
     metadata = load_metadata(
         metadata_file=files_cfg.get('metadata', 'input/metadata.csv'),
-        output_dir=output_dir
+        output_dir=output_dir,
+        cfg=config
     )
     
     # Check for sample consistency
@@ -916,7 +969,9 @@ if __name__ == "__main__":
     # --- Optional: Evaluate optimal k for time-series clustering ---
     ts_cfg = analysis_cfg.get('time_series', {})
     k_eval_cfg = ts_cfg.get('k_evaluation', {})
-    if k_eval_cfg.get('enabled', False):
+    
+    # Only run if Time Series is enabled AND K-eval is enabled AND Time column is present
+    if ts_cfg.get('enabled', True) and ts_cfg.get('time_column_present', True) and k_eval_cfg.get('enabled', False):
         print("\n--- Running K-Value Evaluation for Time-Series Clustering ---")
         evaluate_clustering_k(
             norm_counts, 
@@ -925,10 +980,14 @@ if __name__ == "__main__":
             max_k=k_eval_cfg.get('max_k', 10)
         )
 
-    # 8. Run Time-Series Analysis
-    cluster_results = run_timeseries_analysis(norm_counts, metadata, config)
+    # 7. Time-Series Analysis (Clustering)
+    cluster_results = None # Initialize to None
+    if ts_cfg.get('enabled', True) and ts_cfg.get('time_column_present', True):
+        cluster_results = run_timeseries_analysis(norm_counts, metadata, config, output_dir)
+    else:
+        print("\n--- Time-Series Analysis Skipped (Disabled or Time Column Missing) ---")
 
-    # 6. Create heatmap and master table (now with cluster info)
+    # 8. Create heatmap and master table (now with cluster info)
     if all_results:
         create_master_and_heatmap(
             results_dict=all_results, norm_counts=norm_counts, metadata=metadata,

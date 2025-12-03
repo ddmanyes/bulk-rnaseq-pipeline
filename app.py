@@ -9,31 +9,48 @@ import os
 import yaml
 import subprocess
 import time
+import tempfile
 
 # Set Pandas Styler limit to avoid errors with large tables
 pd.set_option("styler.render.max_elements", 2000000)
 
+# --- Session Isolation ---
+if 'temp_dir' not in st.session_state:
+    st.session_state.temp_dir = tempfile.mkdtemp(prefix="rnaseq_session_")
+    # Initialize default directories
+    os.makedirs(os.path.join(st.session_state.temp_dir, "input"), exist_ok=True)
+    os.makedirs(os.path.join(st.session_state.temp_dir, "output"), exist_ok=True)
+    
+    # Copy default config to session dir
+    if os.path.exists("config.yml"):
+        shutil.copy("config.yml", os.path.join(st.session_state.temp_dir, "config.yml"))
+
+# Helper to get session paths
+def get_session_path(rel_path):
+    return os.path.join(st.session_state.temp_dir, rel_path)
+
 # --- Configuration & Helper Functions ---
-CONFIG_FILE = "config.yml"
+CONFIG_FILE = get_session_path("config.yml")
 
 def load_config():
-    """Loads the YAML config file."""
+    """Loads the YAML config file from session dir."""
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r') as f:
             return yaml.safe_load(f)
     return {}
 
 def save_config(config_data):
-    """Saves the dictionary to the YAML config file."""
+    """Saves the dictionary to the YAML config file in session dir."""
     with open(CONFIG_FILE, 'w') as f:
         yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
 
 def run_pipeline():
-    """Executes the analysis pipeline script."""
+    """Executes the analysis pipeline script with session config."""
     try:
         # Run the script and capture output
+        # Pass the session config path as argument
         process = subprocess.Popen(
-            ["python", "analysis_pipeline.py"],
+            ["python", "analysis_pipeline.py", CONFIG_FILE],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -58,14 +75,24 @@ with st.sidebar:
         if st.button("📥 Load Demo Data", help="Load pre-computed example data for testing."):
             st.caption("Loads pre-computed results for immediate visualization.")
             try:
-                # Copy input
-                if not os.path.exists("input"): os.makedirs("input")
-                if os.path.exists("demo_data/input/metadata.csv"):
-                    shutil.copy("demo_data/input/metadata.csv", "input/metadata.csv")
+                # Copy input to session dir
+                session_input = get_session_path("input")
+                if not os.path.exists(session_input): os.makedirs(session_input)
                 
-                # Copy output
-                if os.path.exists("output"): shutil.rmtree("output")
-                shutil.copytree("demo_data/demo_results", "output")
+                if os.path.exists("demo_data/input/metadata.csv"):
+                    shutil.copy("demo_data/input/metadata.csv", os.path.join(session_input, "metadata.csv"))
+                
+                # Copy output to session dir
+                session_output = get_session_path("output")
+                if os.path.exists(session_output): shutil.rmtree(session_output)
+                shutil.copytree("demo_data/demo_results", session_output)
+                
+                # Update config to point to session dirs
+                cfg = load_config()
+                cfg['files']['input'] = os.path.join(session_input, "merged_counts.csv") # Placeholder
+                cfg['files']['metadata'] = os.path.join(session_input, "metadata.csv")
+                cfg['files']['output_dir'] = session_output
+                save_config(cfg)
                 
                 st.success("Demo data loaded! Please refresh or go to Visualization tabs.")
                 time.sleep(1)
@@ -156,9 +183,10 @@ with tab_merge:
                 merged_df = merged_df.fillna(0)
                 
                 # Save to input directory
-                if not os.path.exists("input"):
-                    os.makedirs("input")
-                output_path = os.path.join("input", output_filename)
+                session_input = get_session_path("input")
+                if not os.path.exists(session_input):
+                    os.makedirs(session_input)
+                output_path = os.path.join(session_input, output_filename)
                 merged_df.to_csv(output_path)
                 
                 status_text.text("Done!")
@@ -178,7 +206,9 @@ with tab0:
     st.markdown("Create or edit your sample metadata file here. This file is required for the analysis.")
 
     # Path to metadata file (from config or default)
-    meta_file_path = config.get('files', {}).get('metadata', 'input/metadata.csv')
+    # Use session path
+    default_meta = get_session_path('input/metadata.csv')
+    meta_file_path = config.get('files', {}).get('metadata', default_meta)
     
     # Load existing or create new
     if os.path.exists(meta_file_path):
@@ -197,44 +227,108 @@ with tab0:
         }, index=['Sample1', 'Sample2'])
         existing_df.index.name = 'SampleID'
 
+    # --- Sync with Count Matrix ---
+    # Try to find the merged count file
+    count_file_path = config.get('files', {}).get('input', get_session_path('input/merged_counts.csv'))
+    
+    col_sync, col_dummy = st.columns([1, 2])
+    with col_sync:
+        if st.button("🔄 Sync Sample IDs from Count Matrix", help="Update metadata rows to match columns in the count matrix."):
+            if os.path.exists(count_file_path):
+                try:
+                    # Read only the header to get columns
+                    counts_df = pd.read_csv(count_file_path, index_col=0, nrows=0)
+                    sample_ids = counts_df.columns.tolist()
+                    
+                    if sample_ids:
+                        # Reindex existing metadata to match count matrix samples
+                        existing_df = existing_df.reindex(sample_ids)
+                        existing_df.index.name = 'SampleID'
+                        existing_df = existing_df.fillna("")
+                        st.success(f"Synced {len(sample_ids)} samples from `{os.path.basename(count_file_path)}`.")
+                    else:
+                        st.warning("Count matrix seems to have no sample columns.")
+                except Exception as e:
+                    st.error(f"Failed to read count matrix: {e}")
+            else:
+                st.error(f"Count matrix file not found: `{count_file_path}`. Please merge files first.")
+
     # Editable Dataframe
-    # We reset index to make SampleID editable as a column, then set it back before saving
     df_to_edit = existing_df.reset_index()
     
-    st.markdown("### Edit Metadata Table")
-    st.markdown("Make sure to have unique **SampleID**s and required columns: **Condition**, **Time**, **Type**.")
+    # Add 'Include' column for row selection (default True)
+    if 'Include' not in df_to_edit.columns:
+        df_to_edit.insert(0, 'Include', True)
     
+    # Get Time Column Name from config
+    time_col = config.get('analysis', {}).get('time_series', {}).get('time_column', 'Time')
+    
+    # Toggle for Time Column
+    use_time_col = st.checkbox(f"Include Time Column ('{time_col}')", value=config.get('analysis', {}).get('time_series', {}).get('time_column_present', True))
+    
+    st.markdown("### Edit Metadata Table")
+    req_cols = "**Condition**, **Type**" + (f", **{time_col}**" if use_time_col else "")
+    st.markdown(f"Check **Include** to save specific rows. Required columns: {req_cols}.")
+    
+    # Dynamic column config
+    cols_cfg = {
+        "Include": st.column_config.CheckboxColumn("Include", help="Check to save this sample.", default=True),
+        "SampleID": st.column_config.TextColumn("Sample ID (Must match count matrix columns)", required=True),
+        "Condition": st.column_config.TextColumn("Condition (e.g. Control, Treat)", required=True),
+        "Type": st.column_config.SelectboxColumn("Type", options=["Control", "Treat"], required=True)
+    }
+    
+    # Handle Time Column
+    if use_time_col:
+        if time_col in df_to_edit.columns:
+            df_to_edit[time_col] = df_to_edit[time_col].astype(str)
+            cols_cfg[time_col] = st.column_config.TextColumn(f"{time_col} (e.g. 0, 6h, Day1)", required=True)
+        elif 'Time' in df_to_edit.columns:
+            df_to_edit = df_to_edit.rename(columns={'Time': time_col})
+            df_to_edit[time_col] = df_to_edit[time_col].astype(str)
+            cols_cfg[time_col] = st.column_config.TextColumn(f"{time_col} (e.g. 0, 6h, Day1)", required=True)
+        else:
+            df_to_edit[time_col] = ""
+            cols_cfg[time_col] = st.column_config.TextColumn(f"{time_col} (e.g. 0, 6h, Day1)", required=True)
+    else:
+        # If disabled, remove from view if present
+        if time_col in df_to_edit.columns:
+            df_to_edit = df_to_edit.drop(columns=[time_col])
+        if 'Time' in df_to_edit.columns:
+            df_to_edit = df_to_edit.drop(columns=['Time'])
+
     edited_df = st.data_editor(
         df_to_edit, 
         num_rows="dynamic", 
         use_container_width=True,
-        column_config={
-            "SampleID": st.column_config.TextColumn("Sample ID (Must match count matrix columns)", required=True),
-            "Condition": st.column_config.TextColumn("Condition (e.g. Control, Treat)", required=True),
-            "Time": st.column_config.NumberColumn("Time (e.g. 0, 6, 24)", required=True),
-            "Type": st.column_config.SelectboxColumn("Type", options=["Control", "Treat"], required=True)
-        }
+        column_config=cols_cfg
     )
 
     if st.button("💾 Save Metadata"):
         try:
+            # Filter rows where Include is True
+            final_df = edited_df[edited_df['Include'] == True].copy()
+            final_df = final_df.drop(columns=['Include'])
+            
             # Check for empty SampleIDs
-            if edited_df['SampleID'].isnull().any() or (edited_df['SampleID'] == '').any():
+            if final_df['SampleID'].isnull().any() or (final_df['SampleID'] == '').any():
                 st.error("Error: SampleID cannot be empty.")
-            elif edited_df['SampleID'].duplicated().any():
+            elif final_df['SampleID'].duplicated().any():
                 st.error("Error: Duplicate SampleIDs found.")
             else:
                 # Set index back to SampleID
-                final_df = edited_df.set_index('SampleID')
+                final_df = final_df.set_index('SampleID')
                 
                 # Ensure directory exists
                 os.makedirs(os.path.dirname(meta_file_path), exist_ok=True)
                 
                 final_df.to_csv(meta_file_path)
-                st.success(f"Metadata saved successfully to `{meta_file_path}`!")
                 
-                # Update config if needed (though we used the path from config)
-                # If the user wants to change the path, they should do it in the Config tab.
+                # Update config for time column presence
+                config['analysis']['time_series']['time_column_present'] = use_time_col
+                save_config(config)
+                
+                st.success(f"Metadata saved successfully to `{meta_file_path}`! ({len(final_df)} samples)")
                 
                 # Show preview
                 st.dataframe(final_df.head())
@@ -255,7 +349,7 @@ with tab1:
         st.subheader("1. File Paths")
     
         # Default to merged_counts.csv
-        default_input_path = "input/merged_counts.csv"
+        default_input_path = get_session_path("input/merged_counts.csv")
         config['files']['input'] = default_input_path
         
         if os.path.exists(default_input_path):
@@ -263,9 +357,44 @@ with tab1:
         else:
             st.warning(f"Input file `{default_input_path}` not found. Please merge files in 'Data Preprocessing' tab first.")
 
-        config['files']['metadata'] = st.text_input("Metadata File", value=config.get('files', {}).get('metadata', 'input/metadata.csv'))
-        gene_annotation_path = st.text_input("Gene Annotation File", value=config.get('files', {}).get('gene_annotation', 'genesets/pair_GRCm39.tsv'))
-        output_dir_path = st.text_input("Output Directory", value=config.get('files', {}).get('output_dir', 'output'))
+        config['files']['metadata'] = st.text_input("Metadata File", value=config.get('files', {}).get('metadata', get_session_path('input/metadata.csv')))
+
+        
+        # Gene Annotation Selection
+        genesets_dir = "genesets"
+        if os.path.exists(genesets_dir):
+            available_genesets = [f for f in os.listdir(genesets_dir) if f.endswith('.tsv')]
+            available_genesets.sort()
+        else:
+            available_genesets = []
+            
+        default_geneset = config.get('files', {}).get('gene_annotation', 'genesets/pair_GRCm39.tsv')
+        # Extract filename from path if needed
+        default_geneset_name = os.path.basename(default_geneset)
+        
+        if default_geneset_name not in available_genesets and available_genesets:
+            default_index = 0
+        elif default_geneset_name in available_genesets:
+            default_index = available_genesets.index(default_geneset_name)
+        else:
+            default_index = 0
+
+        selected_geneset = st.selectbox(
+            "Gene Annotation File", 
+            options=available_genesets,
+            index=default_index,
+            help="Select the appropriate gene annotation file for your species."
+        )
+        
+        gene_annotation_path = os.path.join(genesets_dir, selected_geneset) if selected_geneset else ""
+        
+        st.info("""
+        **Species Guide:**
+        *   🐭 **Mouse**: `pair_GRCm39.tsv`
+        *   👱 **Human**: `pair_GRCh38.tsv` (or `GRCh37`, `T2TCHM13`)
+        *   🐟 **Zebrafish**: `pair_danRer11.tsv` (or `danRer7`)
+        """)
+        output_dir_path = st.text_input("Output Directory", value=config.get('files', {}).get('output_dir', get_session_path('output')))
 
         st.subheader("🧪 Batch Correction")
         # Batch Correction
@@ -334,7 +463,20 @@ with tab1:
         
         # Time Series
         ts_cfg = analysis_cfg.get('time_series', {})
-        ts_enabled = st.checkbox("Enable Time-Series Analysis", value=ts_cfg.get('enabled', True))
+        time_col_present = ts_cfg.get('time_column_present', True)
+        
+        if not time_col_present:
+            ts_enabled = st.checkbox("Enable Time-Series Analysis", value=False, disabled=True, help="Disabled because 'Include Time Column' was unchecked in Metadata Creation.")
+            st.caption("⚠️ Time column disabled in Metadata.")
+        else:
+            ts_enabled = st.checkbox("Enable Time-Series Analysis", value=ts_cfg.get('enabled', True))
+        
+        time_col_name = st.text_input(
+            "Time Column Name", 
+            value=ts_cfg.get('time_column', 'Time'),
+            help="The column in your metadata that represents time points (e.g., 'Time', 'Day', 'Stage')."
+        )
+        
         num_clusters = st.number_input("Number of Clusters (k)", value=ts_cfg.get('num_clusters', 4), min_value=2)
         top_n_genes = st.number_input(
             "Top N Variable Genes for Clustering", 
@@ -388,6 +530,7 @@ with tab1:
     new_config['analysis']['time_series']['enabled'] = ts_enabled
     new_config['analysis']['time_series']['num_clusters'] = num_clusters
     new_config['analysis']['time_series']['top_n_genes'] = top_n_genes
+    new_config['analysis']['time_series']['time_column'] = time_col_name
 
     # Save Button (Manual)
     if st.button("💾 Save Configuration"):
@@ -436,7 +579,7 @@ with tab2:
     st.header("Interactive Results Viewer")
     
     # --- Helper to load data ---
-    OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
+    OUTPUT_DIR = config.get('files', {}).get('output_dir', get_session_path('output'))
     
     # Check for batch corrected data first
     BATCH_CORRECTED_FILE = os.path.join(OUTPUT_DIR, "counts_batch_corrected.csv")
@@ -447,8 +590,8 @@ with tab2:
         st.info(f"Using Batch Corrected Data: `{os.path.basename(COUNTS_FILE)}`")
     else:
         COUNTS_FILE = RAW_COUNTS_FILE
-    METADATA_FILE = config.get('files', {}).get('metadata', 'input/metadata.csv')
-    OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
+    METADATA_FILE = config.get('files', {}).get('metadata', get_session_path('input/metadata.csv'))
+    OUTPUT_DIR = config.get('files', {}).get('output_dir', get_session_path('output'))
 
     @st.cache_data
     def load_data(counts_path, metadata_path):
@@ -479,21 +622,18 @@ with tab2:
         col1, col2 = st.columns([1, 3])
         
         with col1:
-            viz_type = st.radio("Visualization Type", ["Boxplot", "Heatmap"], horizontal=True)
-            st.markdown("---")
+            # viz_type = st.radio("Visualization Type", ["Boxplot", "Heatmap"], horizontal=True)
+            # st.markdown("---")
+            st.markdown("### Visualization Settings")
             
             selected_genes = st.multiselect("Select Gene(s)", options=all_genes, default=all_genes[:2] if len(all_genes)>1 else all_genes[:1])
             
             control_group_plot = st.selectbox("Control Group", all_conditions, index=0, key="viz_ctrl")
             treat_options = [c for c in all_conditions if c != control_group_plot]
-            treat_groups_plot = st.multiselect("Treatment Group(s)", treat_options, default=treat_options[:1] if treat_options else [], key="viz_treat")
+            treat_groups_plot = st.multiselect("Treatment Group(s)", treat_options, default=treat_options, key="viz_treat")
             
             st.markdown("---")
             st.write("📊 **Plot Settings**")
-            
-            if viz_type == "Heatmap":
-                use_zscore = st.checkbox("Apply Z-score (Row-wise)", value=True, help="Standardize expression per gene to highlight relative changes.")
-                color_scale = st.selectbox("Color Scale", ["RdBu_r", "Viridis", "Magma", "Plasma"], index=0)
             
             plot_w = st.slider("Width", 400, 1200, 800, step=50)
             plot_h = st.slider("Height", 300, 1000, 500, step=50)
@@ -506,87 +646,35 @@ with tab2:
                 selected_conditions = [control_group_plot] + treat_groups_plot
                 target_samples = metadata[metadata['Condition'].isin(selected_conditions)].index.tolist()
                 
-                if viz_type == "Boxplot":
-                    # --- BOXPLOT LOGIC ---
-                    expr_data = counts.loc[selected_genes, target_samples].T
-                    plot_df = expr_data.merge(metadata[['Condition']], left_index=True, right_index=True)
-                    df_long = plot_df.melt(id_vars='Condition', value_vars=selected_genes, var_name='Gene', value_name='Expression')
-                    df_long['Condition'] = pd.Categorical(df_long['Condition'], categories=selected_conditions, ordered=True)
-                    df_long = df_long.sort_values('Condition')
-
-                    try:
-                        import seaborn as sns
-                        import matplotlib.pyplot as plt
-                        
-                        # Convert pixels to inches for matplotlib (approx)
-                        fig, ax = plt.subplots(figsize=(plot_w/100, plot_h/100))
-                        
-                        sns.boxplot(data=df_long, x='Gene', y='Expression', hue='Condition', ax=ax, palette='Set2', showfliers=False)
-                        sns.stripplot(data=df_long, x='Gene', y='Expression', hue='Condition', ax=ax, dodge=True, color='black', alpha=0.6, size=4)
-                        
-                        handles, labels = ax.get_legend_handles_labels()
-                        n_cond = len(selected_conditions)
-                        ax.legend(handles[:n_cond], labels[:n_cond], title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
-                        
-                        ax.set_title("Gene Expression Levels")
-                        ax.set_ylabel("Normalized Counts")
-                        plt.tight_layout()
-                        
-                        st.pyplot(fig)
-                        
-                    except Exception as e:
-                        st.error(f"Plotting error: {e}")
+                # --- BOXPLOT LOGIC ---
+                expr_data = counts.loc[selected_genes, target_samples].T
+                plot_df = expr_data.merge(metadata[['Condition']], left_index=True, right_index=True)
+                df_long = plot_df.melt(id_vars='Condition', value_vars=selected_genes, var_name='Gene', value_name='Expression')
+                df_long['Condition'] = pd.Categorical(df_long['Condition'], categories=selected_conditions, ordered=True)
+                df_long = df_long.sort_values('Condition')
                 
-                elif viz_type == "Heatmap":
-                    # --- HEATMAP LOGIC ---
-                    try:
-                        import plotly.express as px
-                        from scipy.stats import zscore
-                        
-                        # Get data: Genes x Samples
-                        heatmap_data = counts.loc[selected_genes, target_samples]
-                        
-                        # Sort samples by condition
-                        sample_conditions = metadata.loc[target_samples, 'Condition']
-                        # Create a sorter based on selected_conditions order
-                        condition_sorter = {c: i for i, c in enumerate(selected_conditions)}
-                        sorted_samples = sorted(target_samples, key=lambda x: (condition_sorter.get(sample_conditions[x], 999), x))
-                        
-                        heatmap_data = heatmap_data[sorted_samples]
-                        
-                        if use_zscore:
-                            # Apply Z-score row-wise (axis=1)
-                            # zscore returns numpy array, need to rebuild DF
-                            heatmap_data = pd.DataFrame(zscore(heatmap_data, axis=1), index=heatmap_data.index, columns=heatmap_data.columns)
-                            title_suffix = "(Z-score)"
-                            color_mid = 0
-                        else:
-                            title_suffix = "(Normalized Counts)"
-                            color_mid = None
-                        
-                        # Create Heatmap
-                        fig = px.imshow(
-                            heatmap_data,
-                            labels=dict(x="Sample", y="Gene", color="Expression"),
-                            x=heatmap_data.columns,
-                            y=heatmap_data.index,
-                            color_continuous_scale=color_scale,
-                            color_continuous_midpoint=color_mid,
-                            aspect="auto",
-                            title=f"Gene Expression Heatmap {title_suffix}"
-                        )
-                        
-                        fig.update_layout(
-                            width=plot_w,
-                            height=plot_h,
-                            xaxis_title="Samples",
-                            yaxis_title="Genes"
-                        )
-                        
-                        st.plotly_chart(fig)
-                        
-                    except Exception as e:
-                        st.error(f"Heatmap error: {e}")
+                try:
+                    import seaborn as sns
+                    import matplotlib.pyplot as plt
+                    
+                    # Convert pixels to inches for matplotlib (approx)
+                    fig, ax = plt.subplots(figsize=(plot_w/100, plot_h/100))
+                    
+                    sns.boxplot(data=df_long, x='Gene', y='Expression', hue='Condition', ax=ax, palette='Set2', showfliers=False)
+                    sns.stripplot(data=df_long, x='Gene', y='Expression', hue='Condition', ax=ax, dodge=True, color='black', alpha=0.6, size=4)
+                    
+                    handles, labels = ax.get_legend_handles_labels()
+                    n_cond = len(selected_conditions)
+                    ax.legend(handles[:n_cond], labels[:n_cond], title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+                    
+                    ax.set_title("Gene Expression Levels")
+                    ax.set_ylabel("Normalized Counts")
+                    plt.tight_layout()
+                    
+                    st.pyplot(fig)
+                    
+                except Exception as e:
+                    st.error(f"Plotting error: {e}")
 
                 # --- Statistics Table (Shared) ---
                 st.markdown("---")
@@ -628,7 +716,7 @@ with tab2:
 with tab_volcano:
     st.header("🌋 Volcano Plot Viewer")
     
-    OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
+    OUTPUT_DIR = config.get('files', {}).get('output_dir', get_session_path('output'))
     
     if os.path.exists(OUTPUT_DIR):
         # Find all Volcano Plot files in the output directory
@@ -733,7 +821,7 @@ with tab_volcano:
 with tab3:
     st.header("📈 Static Plots Gallery")
     
-    OUTPUT_DIR = config.get('files', {}).get('output_dir', 'output')
+    OUTPUT_DIR = config.get('files', {}).get('output_dir', get_session_path('output'))
     
     # Find all PNGs in output directory
     if os.path.exists(OUTPUT_DIR):
@@ -759,7 +847,7 @@ with tab3:
 with tab4:
     st.header("🧬 Pathway Enrichment Analysis")
     
-    ENRICHMENT_DIR = os.path.join(config.get('files', {}).get('output_dir', 'output'), "enrichment")
+    ENRICHMENT_DIR = os.path.join(config.get('files', {}).get('output_dir', get_session_path('output')), "enrichment")
     
     if os.path.exists(ENRICHMENT_DIR):
         # 1. Select Comparison

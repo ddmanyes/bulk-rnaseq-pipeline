@@ -6,7 +6,7 @@ import gzip
 def load_transcript_to_gene_map(fasta_path):
     """
     Parses a FASTA file to create a transcript-to-gene mapping.
-    Assumes Ensembl header format: >TRANSCRIPT_ID ... gene:GENE_ID ...
+    Handles headers formatted like: >transcript_id|gene_id|...
     """
     t2g = {}
     print(f"Loading transcript mapping from {fasta_path}...")
@@ -19,20 +19,16 @@ def load_transcript_to_gene_map(fasta_path):
         with open_func(fasta_path, mode) as f:
             for line in f:
                 if line.startswith('>'):
-                    parts = line.strip().split()
-                    transcript_id = parts[0][1:] # Remove '>'
-                    gene_id = None
-                    
-                    # Look for 'gene:ENS...' pattern
-                    for part in parts:
-                        if part.startswith('gene:'):
-                            gene_id = part.split(':')[1]
-                            break
-                    
-                    if gene_id:
+                    # The header is like: >ENSMUST00000193812.2|ENSMUSG00000102693.2|...
+                    header_parts = line[1:].strip().split('|')
+                    if len(header_parts) >= 2:
+                        transcript_id = header_parts[0]
+                        gene_id = header_parts[1]
                         t2g[transcript_id] = gene_id
                         
         print(f"  - Mapped {len(t2g)} transcripts to genes.")
+        if len(t2g) == 0:
+            print("    WARNING: No transcript-to-gene mappings were found. Check FASTA header format.")
         return t2g
     except Exception as e:
         print(f"Error reading FASTA file: {e}")

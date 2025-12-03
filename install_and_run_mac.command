@@ -46,7 +46,9 @@ if [ ! -d "$ENV_DIR" ]; then
         exit 1
     fi
 else
-    echo "✅ Environment found."
+    echo "🔄 Checking for environment updates..."
+    "$MAMBA_EXE" install -p "$ENV_DIR" -f environment.yml -y
+    echo "✅ Environment is ready."
 fi
 
 # 3. Launch App

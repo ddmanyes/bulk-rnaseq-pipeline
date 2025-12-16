@@ -249,37 +249,28 @@ with tab_merge:
                 output_path_session = os.path.join(session_input, output_filename)
                 merged_df.to_csv(output_path_session)
 
-                status_text.text("Done!")
-                st.success(f"Successfully merged {len(uploaded_files)} files.")
-                st.info(f"Saved to session: `{output_path_session}`")
+                st.session_state['merge_success'] = f"Successfully merged {len(uploaded_files)} files to `{output_path_session}`"
+                st.session_state['merge_file'] = output_path_session
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"An error occurred during merging: {e}")
                 
-                # Provide Download Button
-                csv = merged_df.to_csv().encode('utf-8')
+    # Show success message if persistent
+    if 'merge_success' in st.session_state:
+        st.success(st.session_state['merge_success'])
+        # Provide Download Button (Re-read file)
+        merged_path = st.session_state.get('merge_file')
+        if merged_path and os.path.exists(merged_path):
+             with open(merged_path, 'rb') as f:
                 st.download_button(
                     label="📥 Download Merged Matrix (CSV)",
-                    data=csv,
-                    file_name=output_filename,
+                    data=f,
+                    file_name=os.path.basename(merged_path),
                     mime="text/csv",
                     type="primary"
                 )
-                
-                st.dataframe(merged_df.head(), use_container_width=True)
-                
-                # Rerun to update file lists in other tabs
-                if st.button("Refresh File Lists"):
-                     st.rerun()
-                # Auto-rerun might be annoying if user wants to download immediately, 
-                # but we need to update the dropdowns in other tabs.
-                # Let's rely on the user clicking download or processing further.
-                # But actually, if we don't rerun, Tab 1 won't see the new file until manual refresh.
-                # Let's keep a small delay and rerun, BUT verify if download button persists?
-                # Streamlit rerun clears the page. The download button will disappear!
-                # BAD UX: If I auto-rerun, they can't click download.
-                # FIX: Don't auto-rerun. Just warn they might need to refresh tabs?
-                # OR: The download button is shown. The user clicks it. The page simply reloads (download handling).
-                # The dropdowns in other tabs will update next time they are rendered.
-                # So we DO NOT need to st.rerun() here. Explicit refresh is better.
-                st.caption("Note: Go to 'Run Analysis' tab to select this file.")
+        st.caption("Note: Go to 'Metadata Creation' or 'Run Analysis' tab to use this file.")
                 
             except Exception as e:
                 st.error(f"An error occurred during merging: {e}")
@@ -297,10 +288,21 @@ with tab0:
     uploaded_meta = st.file_uploader("📂 Import Metadata File (Optional)", type=['csv', 'xlsx'], help="Upload a CSV or Excel file to populate the table below. It should have SampleID as the first column (or index).")
 
     # Path to metadata file (from config or default)
-    # Use session path
-    default_meta = get_session_path('input/metadata.csv')
-    meta_file_path = config.get('files', {}).get('metadata', default_meta)
-    
+    # Ensure we use the Session Path for robust read/write permissions
+    config_meta_path = config.get('files', {}).get('metadata', '')
+    if config_meta_path and not os.path.isabs(config_meta_path):
+        # If relative, anchor to session_input_dir or just session_dir
+        # Check if it starts with 'input/'
+        if config_meta_path.startswith("input/"):
+             base_name = os.path.basename(config_meta_path)
+             meta_file_path = get_session_path(f"input/{base_name}")
+        else:
+             meta_file_path = get_session_path(config_meta_path)
+    elif os.path.isabs(config_meta_path):
+        meta_file_path = config_meta_path
+    else:
+        meta_file_path = get_session_path('input/metadata.csv')
+
     # Load logic
     existing_df = None
     

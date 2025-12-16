@@ -272,8 +272,7 @@ with tab_merge:
                 )
         st.caption("Note: Go to 'Metadata Creation' or 'Run Analysis' tab to use this file.")
                 
-            except Exception as e:
-                st.error(f"An error occurred during merging: {e}")
+
     else:
         st.info("Please upload files to begin.")
 

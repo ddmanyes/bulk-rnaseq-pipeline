@@ -185,6 +185,22 @@ with tab_merge:
         st.success(f"Uploaded {len(uploaded_files)} files.")
         
         output_filename = st.text_input("Output Filename", value="merged_counts.csv")
+
+        # Show success message if persistent
+        if 'merge_success' in st.session_state:
+            st.success(st.session_state['merge_success'])
+            # Provide Download Button (Re-read file)
+            merged_path = st.session_state.get('merge_file')
+            if merged_path and os.path.exists(merged_path):
+                 with open(merged_path, 'rb') as f:
+                    st.download_button(
+                        label="📥 Download Merged Matrix (CSV)",
+                        data=f,
+                        file_name=os.path.basename(merged_path),
+                        mime="text/csv",
+                        type="primary"
+                    )
+            st.caption("Note: Go to 'Metadata Creation' or 'Run Analysis' tab to use this file.")
         
         if st.button("Merge Files"):
             try:
@@ -256,23 +272,6 @@ with tab_merge:
             except Exception as e:
                 st.error(f"An error occurred during merging: {e}")
                 
-    # Show success message if persistent
-    if 'merge_success' in st.session_state:
-        st.success(st.session_state['merge_success'])
-        # Provide Download Button (Re-read file)
-        merged_path = st.session_state.get('merge_file')
-        if merged_path and os.path.exists(merged_path):
-             with open(merged_path, 'rb') as f:
-                st.download_button(
-                    label="📥 Download Merged Matrix (CSV)",
-                    data=f,
-                    file_name=os.path.basename(merged_path),
-                    mime="text/csv",
-                    type="primary"
-                )
-        st.caption("Note: Go to 'Metadata Creation' or 'Run Analysis' tab to use this file.")
-                
-
     else:
         st.info("Please upload files to begin.")
 

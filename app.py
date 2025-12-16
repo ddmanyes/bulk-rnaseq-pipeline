@@ -111,7 +111,7 @@ def run_pipeline():
 
 # --- Main App Layout ---
 st.set_page_config(layout="wide", page_title="RNA-seq Pipeline GUI")
-st.title("🧬 Bulk RNA-seq Analysis Pipeline & Interactive Explorer v1.1")
+st.title("🧬 Bulk RNA-seq Analysis Pipeline & Interactive Explorer v1.2")
 
 # --- Sidebar ---
 with st.sidebar:
@@ -202,77 +202,74 @@ with tab_merge:
                     )
             st.caption("Note: Go to 'Metadata Creation' or 'Run Analysis' tab to use this file.")
         
+        if st.button("Merge Files"):
+            try:
+                merged_df = pd.DataFrame()
+                
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                for i, uploaded_file in enumerate(uploaded_files):
+                    status_text.text(f"Processing {uploaded_file.name}...")
+                    
+                    # Determine file type and read
+                    if uploaded_file.name.endswith('.csv'):
+                        df = pd.read_csv(uploaded_file, index_col=0)
+                    elif uploaded_file.name.endswith('.xlsx'):
+                        df = pd.read_excel(uploaded_file, index_col=0)
+                    elif uploaded_file.name.endswith(('.txt', '.tsv')):
+                        df = pd.read_csv(uploaded_file, sep='\t', comment='#')
+                        # Handle featureCounts format
+                        if 'Geneid' in df.columns:
+                            df = df.set_index('Geneid')
+                        elif df.index.name != 'Geneid' and 'Geneid' not in df.columns and df.shape[1] > 1: 
+                                # Assume first column is index if numeric data follows
+                                if df.iloc[:,0].dtype.kind in 'biufc': 
+                                    pass 
+                                else:
+                                    pass
+
+                        # Clean featureCounts columns
+                        if 'Chr' in df.columns and 'Start' in df.columns:
+                            df = df.iloc[:, 5:] 
+                            df.columns = [c.split('/')[-1].split('\\')[-1].replace('.sorted.bam', '').replace('.bam', '') for c in df.columns]
+
+                    # Handle duplicate columns
+                    new_columns = []
+                    for col in df.columns:
+                        if not merged_df.empty and col in merged_df.columns:
+                            new_columns.append(f"{col}_{uploaded_file.name}")
+                        else:
+                            new_columns.append(col)
+                    df.columns = new_columns
+                    
+                    # Merge
+                    if merged_df.empty:
+                        merged_df = df
+                    else:
+                        merged_df = merged_df.join(df, how='outer')
+                    
+                    progress_bar.progress((i + 1) / len(uploaded_files))
+                
+                # Fill NAs and Save
+                merged_df = merged_df.fillna(0)
+                
+                session_input = get_session_path("input")
+                if not os.path.exists(session_input):
+                    os.makedirs(session_input)
+                output_path_session = os.path.join(session_input, output_filename)
+                merged_df.to_csv(output_path_session)
+
+                st.session_state['merge_success'] = f"Successfully merged {len(uploaded_files)} files to `{output_path_session}`"
+                st.session_state['merge_file'] = output_path_session
+                st.rerun()
+
+            except Exception as e:
+                # Indentation fixed v1.2
+                st.error(f"An error occurred during merging: {e}")
+
     else:
         st.info("Please upload files to begin.")
-
-        if st.button("Merge Files"):
-            if not uploaded_files:
-                st.error("No files uploaded.")
-            else:
-                try:
-                    merged_df = pd.DataFrame()
-                    
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    for i, uploaded_file in enumerate(uploaded_files):
-                        status_text.text(f"Processing {uploaded_file.name}...")
-                        
-                        # Determine file type and read
-                        if uploaded_file.name.endswith('.csv'):
-                            df = pd.read_csv(uploaded_file, index_col=0)
-                        elif uploaded_file.name.endswith('.xlsx'):
-                            df = pd.read_excel(uploaded_file, index_col=0)
-                        elif uploaded_file.name.endswith(('.txt', '.tsv')):
-                            df = pd.read_csv(uploaded_file, sep='\t', comment='#')
-                            # Handle featureCounts format
-                            if 'Geneid' in df.columns:
-                                df = df.set_index('Geneid')
-                            elif df.index.name != 'Geneid' and 'Geneid' not in df.columns and df.shape[1] > 1: 
-                                 # Assume first column is index if numeric data follows
-                                 if df.iloc[:,0].dtype.kind in 'biufc': 
-                                     pass 
-                                 else:
-                                     pass
-    
-                            # Clean featureCounts columns
-                            if 'Chr' in df.columns and 'Start' in df.columns:
-                                df = df.iloc[:, 5:] 
-                                df.columns = [c.split('/')[-1].split('\\')[-1].replace('.sorted.bam', '').replace('.bam', '') for c in df.columns]
-    
-                        # Handle duplicate columns
-                        new_columns = []
-                        for col in df.columns:
-                            if not merged_df.empty and col in merged_df.columns:
-                                new_columns.append(f"{col}_{uploaded_file.name}")
-                            else:
-                                new_columns.append(col)
-                        df.columns = new_columns
-                        
-                        # Merge
-                        if merged_df.empty:
-                            merged_df = df
-                        else:
-                            merged_df = merged_df.join(df, how='outer')
-                        
-                        progress_bar.progress((i + 1) / len(uploaded_files))
-                    
-                    # Fill NAs and Save
-                    merged_df = merged_df.fillna(0)
-                    
-                    session_input = get_session_path("input")
-                    if not os.path.exists(session_input):
-                        os.makedirs(session_input)
-                    output_path_session = os.path.join(session_input, output_filename)
-                    merged_df.to_csv(output_path_session)
-    
-                    st.session_state['merge_success'] = f"Successfully merged {len(uploaded_files)} files to `{output_path_session}`"
-                    st.session_state['merge_file'] = output_path_session
-                    st.rerun()
-    
-                except Exception as e:
-                    # Indentation fixed v1.2
-                    st.error(f"An error occurred during merging: {e}")
 
 # ==========================================
 # TAB 0: Metadata Creation

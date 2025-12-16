@@ -79,6 +79,10 @@ def preprocess_data(feature_counts_file, gene_annotation_file, output_dir):
     if os.path.exists(gene_annotation_file):
         try:
             original_counts = counts_matrix.copy()
+            
+            # Clean Ensembl IDs (remove version suffix like .5)
+            counts_matrix.index = counts_matrix.index.astype(str).str.split('.').str[0]
+            
             counts_matrix = ov.bulk.Matrix_ID_mapping(counts_matrix, gene_annotation_file)
             
             if counts_matrix.empty:

@@ -111,7 +111,7 @@ def run_pipeline():
 
 # --- Main App Layout ---
 st.set_page_config(layout="wide", page_title="RNA-seq Pipeline GUI")
-st.title("🧬 Bulk RNA-seq Analysis Pipeline")
+st.title("🧬 Bulk RNA-seq Analysis Pipeline & Interactive Explorer v1.1")
 
 # --- Sidebar ---
 with st.sidebar:
@@ -270,6 +270,7 @@ with tab_merge:
                 st.rerun()
 
             except Exception as e:
+                # Indentation fix verified v1.1
                 st.error(f"An error occurred during merging: {e}")
                 
     else:

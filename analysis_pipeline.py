@@ -65,7 +65,31 @@ def preprocess_data(feature_counts_file, gene_annotation_file, output_dir):
     ov.utils.download_geneid_annotation_pair()
     
     print("Converting gene IDs to gene symbols...")
-    counts_matrix = ov.bulk.Matrix_ID_mapping(counts_matrix, gene_annotation_file)
+    
+    # Resolve annotation file path
+    if not gene_annotation_file:
+        gene_annotation_file = "genesets/pair_GRCm39.tsv" # Default fallback
+        
+    if not os.path.isabs(gene_annotation_file):
+        # Allow resolving relative to the script directory if not found in CWD
+        candidate_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), gene_annotation_file)
+        if os.path.exists(candidate_path):
+            gene_annotation_file = candidate_path
+    
+    if os.path.exists(gene_annotation_file):
+        try:
+            original_counts = counts_matrix.copy()
+            counts_matrix = ov.bulk.Matrix_ID_mapping(counts_matrix, gene_annotation_file)
+            
+            if counts_matrix.empty:
+                print("Warning: Gene ID mapping resulted in 0 genes (likely wrong species or IDs already symbols). Reverting to original matrix.")
+                counts_matrix = original_counts
+        except Exception as e:
+            print(f"Warning: Gene ID mapping failed: {e}. Proceeding with original IDs.")
+            counts_matrix = original_counts
+    else:
+        print(f"Warning: Annotation file '{gene_annotation_file}' not found. Skipping ID mapping.")
+
     
     # 1.3 Save processed counts
     processed_counts_path_csv = os.path.join(output_dir, "counts.csv")
@@ -149,9 +173,22 @@ def perform_batch_correction(counts, metadata, batch_key, output_dir):
     """
     print("\n--- Step 2.5: Batch Correction ---")
     
+    # 0. Check and Log-Transform Data if needed
+    # ComBat expects data to be roughly normal (log-transformed counts), not raw integer counts.
+    # If max value is large (> 100), assume it's raw counts and log-transform.
+    is_log_transformed = False
+    if counts.max().max() > 100:
+        print("  - Data appears to be raw counts (Max > 100). applying log2(x+1) before batch correction...")
+        # Add 1 pseudo-count to handle zeros
+        counts_for_correction = np.log2(counts + 1)
+        is_log_transformed = True
+    else:
+        print("  - Data appears to be already log-transformed (Max <= 100). Using as is.")
+        counts_for_correction = counts
+
     # 1. Prepare AnnData
     # AnnData expects X to be (n_obs, n_vars), so we transpose counts (n_vars, n_obs)
-    adata = anndata.AnnData(counts.T)
+    adata = anndata.AnnData(counts_for_correction.T)
     
     # Add metadata
     # Ensure metadata index matches adata.obs_names
@@ -540,14 +577,41 @@ def create_top_variable_heatmap(norm_counts, metadata, output_dir, top_n):
     print(f"Top {top_n} variable genes heatmap saved to '{heatmap_path}'")
     print("-" * 40)
 
-def generate_pca_plot(norm_counts, metadata, output_dir):
+def generate_pca_plot(norm_counts, metadata, output_dir, pca_cfg={}):
     """
     Generates a PCA plot from normalized counts.
+    Supports filtering for high variance genes based on config.
     """
     print("\n--- Step 6: Generating PCA Plot ---")
     
+    if norm_counts.empty:
+        print("Warning: Normalized counts matrix is empty. Skipping PCA.")
+        return
+
+    # Check for filtering
+    filter_hvg = pca_cfg.get('filter_high_variance', False)
+    top_n = pca_cfg.get('top_n_genes', 500)
+    
+    if filter_hvg:
+        print(f"  - Filtering top {top_n} highest variance genes for PCA...")
+        # Calculate variance
+        gene_vars = norm_counts.var(axis=1)
+        top_genes = gene_vars.nlargest(top_n).index
+        data_subset = norm_counts.loc[top_genes]
+        print(f"  - Selected {data_subset.shape[0]} genes.")
+        plot_title = f'Principal Component Analysis (PCA)\nTop {top_n} Variable Genes'
+    else:
+        print("  - Using ALL genes for PCA (No filtering).")
+        data_subset = norm_counts
+        plot_title = 'Principal Component Analysis (PCA)\nAll Genes'
+
+    if data_subset.empty:
+        print("Warning: Data for PCA is empty after filtering. Skipping PCA.")
+        return
+
+
     # PCA works on samples x features, so we transpose the counts matrix
-    data = norm_counts.T
+    data = data_subset.T
     
     # Perform PCA
     pca = PCA(n_components=2)
@@ -575,14 +639,15 @@ def generate_pca_plot(norm_counts, metadata, output_dir):
         
     adjust_text(texts, arrowprops=dict(arrowstyle='-', color='gray', lw=0.5))
 
-    plt.title('Principal Component Analysis (PCA)')
+    plt.title(plot_title)
     plt.xlabel(f'PC1 ({explained_variance[0]:.1%})')
     plt.ylabel(f'PC2 ({explained_variance[1]:.1%})')
-    plt.legend(title='Condition')
+    plt.legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.grid(True)
     
     # Save the plot
-    pca_plot_path = os.path.join(output_dir, "PCA_plot.png")
+    filename_suffix = "TopHVG" if filter_hvg else "AllGenes"
+    pca_plot_path = os.path.join(output_dir, f"PCA_plot_{filename_suffix}.png")
     plt.savefig(pca_plot_path, dpi=300, bbox_inches='tight')
     plt.close()
     
@@ -898,8 +963,20 @@ if __name__ == "__main__":
     # Align counts to metadata
     counts_matrix = counts_matrix[metadata.index]
     
+    if metadata.empty or counts_matrix.empty:
+        raise ValueError(
+            "CRITICAL ERROR: No matching samples found between Count Matrix and Metadata.\n"
+            "Please check your Metadata 'SampleID' column. They MUST match the column names in your count matrix.\n"
+            f"Count Matrix Columns: {list(counts_matrix.columns)[:5]} ...\n"
+            f"Metadata SampleIDs: {list(metadata.index)[:5]} ..."
+        )
+
+    
     # 3. Initialize DESeq2 object
-    dds = ov.bulk.pyDEG(counts_matrix)
+    # Ensure counts are integers (raw counts are required for DESeq2/pyDEG)
+    print("Initializing DESeq2 object (ensuring integer counts)...")
+    counts_matrix_int = counts_matrix.round().astype(int)
+    dds = ov.bulk.pyDEG(counts_matrix_int)
     dds.drop_duplicates_index()
     
     # 4. Run batch analysis (DEG + Enrichment)
@@ -964,7 +1041,7 @@ if __name__ == "__main__":
     print("-" * 40)
 
     # 6. Generate PCA plot
-    generate_pca_plot(norm_counts, metadata, output_dir)
+    generate_pca_plot(norm_counts, metadata, output_dir, analysis_cfg.get('pca', {}))
     
     # --- Optional: Evaluate optimal k for time-series clustering ---
     ts_cfg = analysis_cfg.get('time_series', {})

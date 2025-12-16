@@ -20,9 +20,11 @@ def load_transcript_to_gene_map(fasta_path):
             for line in f:
                 if line.startswith('>'):
                     # The header is like: >ENSMUST00000193812.2|ENSMUSG00000102693.2|...
-                    header_parts = line[1:].strip().split('|')
+                    full_header = line[1:].strip()
+                    header_parts = full_header.split('|')
                     if len(header_parts) >= 2:
-                        transcript_id = header_parts[0]
+                        # Kallisto uses the entire header string as the target_id
+                        transcript_id = full_header
                         gene_id = header_parts[1]
                         t2g[transcript_id] = gene_id
                         
@@ -91,10 +93,10 @@ def aggregate_kallisto_counts(kallisto_dir, t2g_map, output_file):
 if __name__ == "__main__":
     # --- Configuration ---
     # Adjust these paths as needed
-    BASE_DIR = os.getcwd()
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     KALLISTO_RESULTS_DIR = os.path.join(BASE_DIR, "../Kallisto_v1/results_kallisto") 
     REF_FASTA = os.path.join(BASE_DIR, "../Kallisto_v1/reference/transcripts.fasta.gz")
-    OUTPUT_MATRIX = "input/kallisto_gene_counts.csv"
+    OUTPUT_MATRIX = os.path.join(BASE_DIR, "input/kallisto_gene_counts.csv")
     
     # Check if files exist
     if not os.path.exists(KALLISTO_RESULTS_DIR):

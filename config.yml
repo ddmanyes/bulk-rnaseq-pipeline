@@ -29,3 +29,6 @@ analysis:
     k_evaluation:
       enabled: true
       max_k: 10
+  pca:
+    filter_high_variance: true
+    top_n_genes: 2000

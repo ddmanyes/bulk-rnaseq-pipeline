@@ -191,6 +191,7 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
 2. **Navigate the Tabs**:
     - **📂 Data Preprocessing**: Select a folder containing multiple count files (CSV, Excel, featureCounts) and merge them into a single matrix.
     - **📝 Metadata Creation**: Create or edit your `metadata.csv` file interactively.
+        - **Upload Metadata**: **[NEW]** Directly upload your existing `metadata.csv` or `.xlsx` file to populate the table.
         - **Sync Sample IDs**: Automatically populate sample IDs from your merged count matrix.
         - **Select Samples**: Use the **"Include"** checkbox to choose which samples to save. Unchecked samples will be excluded.
         - **Optional Time Column**: Toggle **"Include Time Column"** to enable/disable time-series features. If disabled, Time-Series Analysis will be skipped.
@@ -201,7 +202,7 @@ The Streamlit app provides a user-friendly interface for the entire workflow.
     - **📈 Static Plots**: View all the pre-generated plots (PCA, Volcano, Heatmaps) from the analysis.
     - **🌋 Volcano Plot**: View static Volcano Plots and explore the underlying data with an interactive table (filter by significance, download results).
     - **📊 Interactive Visualization**:
-        - **Boxplot**: Visualize gene expression distribution across groups.
+        - **Boxplot**: Visualize gene expression distribution across groups. **Auto-Log Transformation**: If raw counts are detected (>100), data is automatically log-transformed (`log2(x+1)`) for better visualization.
     - **🧬 Pathway Analysis**: Explore enrichment analysis results. Select specific comparisons and pathway plots (e.g., GO Biological Process, KEGG) and download result tables.
 
 ### Option 2: Command Line Workflow

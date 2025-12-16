@@ -15,6 +15,9 @@ import tempfile
 # Set Pandas Styler limit to avoid errors with large tables
 pd.set_option("styler.render.max_elements", 2000000)
 
+# --- Global Constants ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # --- Session Isolation ---
 if 'temp_dir' not in st.session_state:
     st.session_state.temp_dir = tempfile.mkdtemp(prefix="rnaseq_session_")
@@ -23,18 +26,61 @@ if 'temp_dir' not in st.session_state:
     os.makedirs(os.path.join(st.session_state.temp_dir, "output"), exist_ok=True)
     
     # Copy default config to session dir
-    if os.path.exists("config.yml"):
-        shutil.copy("config.yml", os.path.join(st.session_state.temp_dir, "config.yml"))
+    
+    # Copy default config to session dir
+    # Copy default config to session dir
+    default_config_path = os.path.join(BASE_DIR, "config.yml")
+    if os.path.exists(default_config_path):
+        shutil.copy(default_config_path, os.path.join(st.session_state.temp_dir, "config.yml"))
+    else:
+        # Fallback: Create a minimal config if file is missing to avoid crash
+        minimal_config = {
+            'files': {'input': '', 'metadata': '', 'output_dir': 'output'},
+            'analysis': {
+                'diff_expression': {}, 'significance': {}, 'enrichment': {}, 'time_series': {}
+            }
+        }
+        with open(os.path.join(st.session_state.temp_dir, "config.yml"), 'w') as f:
+            yaml.dump(minimal_config, f)
+
+    # NEW: Sync project 'input' directory to session 'input' directory
+    # Moved to sync_input_files() function to run on every script execution
 
 # Helper to get session paths
 def get_session_path(rel_path):
     return os.path.join(st.session_state.temp_dir, rel_path)
+
+# --- Sessions & Sync ---
+def sync_input_files():
+    """Syncs files from project input dir to session input dir."""
+    project_input_dir = os.path.join(BASE_DIR, "input")
+    session_input_dir = get_session_path("input")
+    
+    if not os.path.exists(session_input_dir):
+        os.makedirs(session_input_dir)
+    
+    if os.path.exists(project_input_dir):
+        for item in os.listdir(project_input_dir):
+            if item.startswith('.'): continue # Skip hidden files
+            s = os.path.join(project_input_dir, item)
+            d = os.path.join(session_input_dir, item)
+            if os.path.isfile(s):
+                # Update only if destination doesn't exist (don't overwrite user session data)
+                if not os.path.exists(d):
+                    try:
+                        shutil.copy2(s, d)
+                    except Exception as e:
+                        print(f"Error syncing {item}: {e}")
+
+# Execute Sync on every rerun
+sync_input_files()
 
 # --- Configuration & Helper Functions ---
 CONFIG_FILE = get_session_path("config.yml")
 
 def load_config():
     """Loads the YAML config file from session dir."""
+    # ... (existing load_config code) ...
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r') as f:
             return yaml.safe_load(f)
@@ -51,7 +97,7 @@ def run_pipeline():
         # Run the script and capture output
         # Pass the session config path as argument
         process = subprocess.Popen(
-            [sys.executable, "analysis_pipeline.py", CONFIG_FILE],
+            [sys.executable, os.path.join(BASE_DIR, "analysis_pipeline.py"), CONFIG_FILE],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -67,13 +113,14 @@ def run_pipeline():
 st.set_page_config(layout="wide", page_title="RNA-seq Pipeline GUI")
 st.title("🧬 Bulk RNA-seq Analysis Pipeline")
 
-# --- Sidebar: Demo Data ---
+# --- Sidebar ---
 with st.sidebar:
     st.header("🔧 Utility")
     
+    # ... (Demo Data section) ...
     st.warning("⚠️ **Privacy Note**: This app runs on a public cloud. Do NOT upload PII or confidential data.")
     if os.path.exists("demo_data"):
-        if st.button("📥 Load Demo Data", help="Load pre-computed example data for testing."):
+        if st.button("📥 Load Demo Data"):
             st.caption("Loads pre-computed results for immediate visualization.")
             try:
                 # Copy input to session dir
@@ -111,6 +158,13 @@ with st.sidebar:
 
 # Load initial config
 config = load_config()
+
+# Ensure config has necessary keys (Robustness Check)
+if 'files' not in config: config['files'] = {}
+if 'analysis' not in config: config['analysis'] = {}
+if 'input' not in config['files']: config['files']['input'] = ""
+if 'metadata' not in config['files']: config['files']['metadata'] = ""
+if 'output_dir' not in config['files']: config['files']['output_dir'] = "output"
 
 # Create Tabs
 tab_merge, tab0, tab1, tab3, tab_volcano, tab2, tab4 = st.tabs(["📂 Data Preprocessing", "📝 Metadata Creation", "⚙️ Run Analysis", "📈 Static Plots", "🌋 Volcano Plot", "📊 Interactive Visualization", "🧬 Pathway Analysis"])
@@ -152,9 +206,14 @@ with tab_merge:
                         # Handle featureCounts format
                         if 'Geneid' in df.columns:
                             df = df.set_index('Geneid')
-                        elif df.index.name != 'Geneid' and 'Geneid' not in df.columns and df.shape[1] > 6: 
-                             # Try to guess if it's featureCounts without header or with different header
-                             pass
+                        elif df.index.name != 'Geneid' and 'Geneid' not in df.columns and df.shape[1] > 1: 
+                             # Assume first column is index if numeric data follows
+                             if df.iloc[:,0].dtype.kind in 'biufc': # Check if numeric
+                                 pass # Already set index_col=0, so this is likely fine
+                             else:
+                                 # If index was not set correctly? Re-read?
+                                 # For now, assumes pd.read_csv(index_col=0) did its best.
+                                 pass
 
                         # Clean featureCounts columns (remove metadata columns)
                         if 'Chr' in df.columns and 'Start' in df.columns:
@@ -183,16 +242,44 @@ with tab_merge:
                 # Fill NAs with 0
                 merged_df = merged_df.fillna(0)
                 
-                # Save to input directory
+                # Save to session input directory
                 session_input = get_session_path("input")
                 if not os.path.exists(session_input):
                     os.makedirs(session_input)
-                output_path = os.path.join(session_input, output_filename)
-                merged_df.to_csv(output_path)
-                
+                output_path_session = os.path.join(session_input, output_filename)
+                merged_df.to_csv(output_path_session)
+
                 status_text.text("Done!")
-                st.success(f"Successfully merged {len(uploaded_files)} files into `{output_path}`")
-                st.dataframe(merged_df.head())
+                st.success(f"Successfully merged {len(uploaded_files)} files.")
+                st.info(f"Saved to session: `{output_path_session}`")
+                
+                # Provide Download Button
+                csv = merged_df.to_csv().encode('utf-8')
+                st.download_button(
+                    label="📥 Download Merged Matrix (CSV)",
+                    data=csv,
+                    file_name=output_filename,
+                    mime="text/csv",
+                    type="primary"
+                )
+                
+                st.dataframe(merged_df.head(), use_container_width=True)
+                
+                # Rerun to update file lists in other tabs
+                if st.button("Refresh File Lists"):
+                     st.rerun()
+                # Auto-rerun might be annoying if user wants to download immediately, 
+                # but we need to update the dropdowns in other tabs.
+                # Let's rely on the user clicking download or processing further.
+                # But actually, if we don't rerun, Tab 1 won't see the new file until manual refresh.
+                # Let's keep a small delay and rerun, BUT verify if download button persists?
+                # Streamlit rerun clears the page. The download button will disappear!
+                # BAD UX: If I auto-rerun, they can't click download.
+                # FIX: Don't auto-rerun. Just warn they might need to refresh tabs?
+                # OR: The download button is shown. The user clicks it. The page simply reloads (download handling).
+                # The dropdowns in other tabs will update next time they are rendered.
+                # So we DO NOT need to st.rerun() here. Explicit refresh is better.
+                st.caption("Note: Go to 'Run Analysis' tab to select this file.")
                 
             except Exception as e:
                 st.error(f"An error occurred during merging: {e}")
@@ -206,21 +293,43 @@ with tab0:
     st.header("Metadata Editor")
     st.markdown("Create or edit your sample metadata file here. This file is required for the analysis.")
 
+    # --- 1. File Uploader ---
+    uploaded_meta = st.file_uploader("📂 Import Metadata File (Optional)", type=['csv', 'xlsx'], help="Upload a CSV or Excel file to populate the table below. It should have SampleID as the first column (or index).")
+
     # Path to metadata file (from config or default)
     # Use session path
     default_meta = get_session_path('input/metadata.csv')
     meta_file_path = config.get('files', {}).get('metadata', default_meta)
     
-    # Load existing or create new
-    if os.path.exists(meta_file_path):
-        st.info(f"Loading existing metadata from: `{meta_file_path}`")
+    # Load logic
+    existing_df = None
+    
+    # Priority 1: Uploaded File (if selected/present)
+    if uploaded_meta:
         try:
-            existing_df = pd.read_csv(meta_file_path, index_col=0)
+            if uploaded_meta.name.endswith('.xlsx'):
+                existing_df = pd.read_excel(uploaded_meta, index_col=0)
+            else:
+                existing_df = pd.read_csv(uploaded_meta, index_col=0)
+            st.success(f"Previewing uploaded metadata: `{uploaded_meta.name}`")
         except Exception as e:
-            st.error(f"Error loading metadata: {e}")
-            existing_df = pd.DataFrame(columns=['Condition', 'Time', 'Type'])
-    else:
-        st.warning(f"File `{meta_file_path}` not found. Starting with a template.")
+            st.error(f"Error reading uploaded file: {e}")
+            existing_df = None
+
+    # Priority 2: Existing File on Disk (only if no upload or upload failed)
+    if existing_df is None:
+        if os.path.exists(meta_file_path):
+            st.info(f"Loading existing metadata from: `{meta_file_path}`")
+            try:
+                existing_df = pd.read_csv(meta_file_path, index_col=0)
+            except Exception as e:
+                st.error(f"Error loading metadata: {e}")
+                existing_df = None
+
+    # Priority 3: Default Template
+    if existing_df is None:
+        if not uploaded_meta: # Only show warning if not trying to upload
+             st.warning(f"File `{meta_file_path}` not found. Starting with a template.")
         existing_df = pd.DataFrame({
             'Condition': ['Control', 'Treat'],
             'Time': [0, 6],
@@ -229,30 +338,78 @@ with tab0:
         existing_df.index.name = 'SampleID'
 
     # --- Sync with Count Matrix ---
-    # Try to find the merged count file
-    count_file_path = config.get('files', {}).get('input', get_session_path('input/merged_counts.csv'))
+    st.subheader("Sync with Count Data")
     
-    col_sync, col_dummy = st.columns([1, 2])
-    with col_sync:
-        if st.button("🔄 Sync Sample IDs from Count Matrix", help="Update metadata rows to match columns in the count matrix."):
-            if os.path.exists(count_file_path):
-                try:
-                    # Read only the header to get columns
-                    counts_df = pd.read_csv(count_file_path, index_col=0, nrows=0)
-                    sample_ids = counts_df.columns.tolist()
+    # Dynamic discovery of count files
+    session_input_dir = get_session_path("input")
+    count_candidates = [f for f in os.listdir(session_input_dir) if f.endswith(('.csv', '.xlsx', '.txt', '.tsv'))] if os.path.exists(session_input_dir) else []
+    
+    # Determine default selection
+    default_idx = 0
+    # Prioritize config if valid
+    current_config_input = config.get('files', {}).get('input', '')
+    current_config_basename = os.path.basename(current_config_input) if current_config_input else ""
+    
+    if current_config_basename in count_candidates:
+        default_idx = count_candidates.index(current_config_basename)
+    elif "kallisto_gene_counts.csv" in count_candidates:
+         default_idx = count_candidates.index("kallisto_gene_counts.csv")
+    elif "merged_counts.csv" in count_candidates:
+         default_idx = count_candidates.index("merged_counts.csv")
+    
+    selected_count_file = st.selectbox(
+        "Select Count Matrix to Sync From",
+        options=count_candidates,
+        index=default_idx if count_candidates else 0,
+        help="Select the count matrix file (CSV/Excel) containing Sample IDs."
+    ) if count_candidates else None
+    
+    if selected_count_file:
+         count_file_path = os.path.join(session_input_dir, selected_count_file)
+    else:
+         count_file_path = None
+
+    if st.button("🔄 Sync Sample IDs", help="Read column names from the selected matrix and update Metadata rows."):
+        if count_file_path and os.path.exists(count_file_path):
+            try:
+                # Read only the header to get columns
+                if count_file_path.endswith('.xlsx'):
+                     counts_df = pd.read_excel(count_file_path, index_col=0, nrows=0)
+                else:
+                     # Detect separator
+                     try:
+                        counts_df = pd.read_csv(count_file_path, index_col=0, nrows=0)
+                        if len(counts_df.columns) < 1: # Failed to parse proper cols, try tab
+                            counts_df = pd.read_csv(count_file_path, index_col=0, sep='\t', nrows=0)
+                     except:
+                        counts_df = pd.read_csv(count_file_path, index_col=0, sep='\t', nrows=0)
+
+                sample_ids = counts_df.columns.tolist()
+                
+                if sample_ids:
+                    # Reindex existing metadata to match count matrix samples
+                    existing_df = existing_df.reindex(sample_ids)
+                    existing_df.index.name = 'SampleID'
+                    existing_df = existing_df.fillna("")
                     
-                    if sample_ids:
-                        # Reindex existing metadata to match count matrix samples
-                        existing_df = existing_df.reindex(sample_ids)
-                        existing_df.index.name = 'SampleID'
-                        existing_df = existing_df.fillna("")
-                        st.success(f"Synced {len(sample_ids)} samples from `{os.path.basename(count_file_path)}`.")
-                    else:
-                        st.warning("Count matrix seems to have no sample columns.")
-                except Exception as e:
-                    st.error(f"Failed to read count matrix: {e}")
-            else:
-                st.error(f"Count matrix file not found: `{count_file_path}`. Please merge files first.")
+                    # Save the updated metadata to file so it persists after rerun
+                    # Ensure directory exists
+                    os.makedirs(os.path.dirname(meta_file_path), exist_ok=True)
+                    existing_df.to_csv(meta_file_path)
+                    
+                    # Update config input path if sync is successful
+                    config['files']['input'] = count_file_path
+                    save_config(config)
+                    
+                    st.success(f"Synced {len(sample_ids)} samples from `{selected_count_file}`.")
+                    # Rerun to update the table editor below
+                    st.rerun()
+                else:
+                    st.warning("Count matrix seems to have no sample columns.")
+            except Exception as e:
+                st.error(f"Failed to read count matrix: {e}")
+        else:
+            st.error("No valid count file selected or file not found.")
 
     # Editable Dataframe
     df_to_edit = existing_df.reset_index()
@@ -271,6 +428,17 @@ with tab0:
     req_cols = "**Condition**, **Type**" + (f", **{time_col}**" if use_time_col else "")
     st.markdown(f"Check **Include** to save specific rows. Required columns: {req_cols}.")
     
+    # Ensure object columns are strings to avoid Streamlit TextColumn error with NaNs (floats)
+    if 'Condition' in df_to_edit.columns:
+        df_to_edit['Condition'] = df_to_edit['Condition'].fillna('').astype(str)
+    else:
+        df_to_edit['Condition'] = ""
+
+    if 'Type' in df_to_edit.columns:
+         df_to_edit['Type'] = df_to_edit['Type'].fillna('Control').astype(str) # Default to Control if missing
+    else:
+         df_to_edit['Type'] = "Control"
+
     # Dynamic column config
     cols_cfg = {
         "Include": st.column_config.CheckboxColumn("Include", help="Check to save this sample.", default=True),
@@ -302,7 +470,8 @@ with tab0:
         df_to_edit, 
         num_rows="dynamic", 
         use_container_width=True,
-        column_config=cols_cfg
+        column_config=cols_cfg,
+        key="metadata_editor"
     )
 
     if st.button("💾 Save Metadata"):
@@ -331,8 +500,17 @@ with tab0:
                 
                 st.success(f"Metadata saved successfully to `{meta_file_path}`! ({len(final_df)} samples)")
                 
-                # Show preview
-                st.dataframe(final_df.head())
+                # Show full table
+                st.dataframe(final_df, use_container_width=True)
+                
+                # Provide Download Button
+                meta_csv = final_df.to_csv().encode('utf-8')
+                st.download_button(
+                    label="📥 Download Metadata (CSV)",
+                    data=meta_csv,
+                    file_name="metadata.csv",
+                    mime="text/csv"
+                )
                 
         except Exception as e:
             st.error(f"Failed to save metadata: {e}")
@@ -350,13 +528,34 @@ with tab1:
         st.subheader("1. File Paths")
     
         # Default to merged_counts.csv
-        default_input_path = get_session_path("input/merged_counts.csv")
-        config['files']['input'] = default_input_path
+        # Input File Selection
+        session_input_dir = get_session_path("input")
+        input_candidates = [f for f in os.listdir(session_input_dir) if f.endswith(('.csv', '.xlsx', '.txt', '.tsv'))] if os.path.exists(session_input_dir) else []
         
-        if os.path.exists(default_input_path):
-            st.success(f"Using input file: `{default_input_path}`")
+        default_candidate_index = 0
+        current_input_basename = os.path.basename(config.get('files', {}).get('input', ''))
+        
+        if current_input_basename in input_candidates:
+             default_candidate_index = input_candidates.index(current_input_basename)
+        elif "kallisto_gene_counts.csv" in input_candidates:
+            default_candidate_index = input_candidates.index("kallisto_gene_counts.csv")
+        elif "merged_counts.csv" in input_candidates:
+            default_candidate_index = input_candidates.index("merged_counts.csv")
+            
+        if input_candidates:
+            selected_input_file = st.selectbox(
+                "Select Input Count Matrix", 
+                options=input_candidates, 
+                index=default_candidate_index,
+                key="run_analysis_input_select"
+            )
+            default_input_path = os.path.join(session_input_dir, selected_input_file)
+            st.success(f"Selected input file: `{default_input_path}`")
         else:
-            st.warning(f"Input file `{default_input_path}` not found. Please merge files in 'Data Preprocessing' tab first.")
+            default_input_path = get_session_path("input/merged_counts.csv")
+            st.warning("No input files found in directory. Please upload/merge files first.")
+        
+        config['files']['input'] = default_input_path
 
         config['files']['metadata'] = st.text_input("Metadata File", value=config.get('files', {}).get('metadata', get_session_path('input/metadata.csv')))
 
@@ -423,6 +622,13 @@ with tab1:
         padj_threshold = st.number_input("Adjusted P-value Threshold", value=sig_cfg.get('padj_threshold', 0.05), format="%.3f")
         log2fc_threshold = st.number_input("Log2 Fold Change Threshold", value=sig_cfg.get('log2fc_threshold', 1.0), format="%.2f")
         
+        # PCA Settings
+        st.markdown("---")
+        st.write("📊 **PCA Settings**")
+        pca_cfg = analysis_cfg.get('pca', {})
+        pca_filter_hvg = st.checkbox("Filter High Variance Genes for PCA", value=pca_cfg.get('filter_high_variance', True), help="If enabled, PCA will be performed only on the most variable genes for better separation.")
+        pca_top_n = st.number_input("Top N Genes for PCA", value=pca_cfg.get('top_n_genes', 2000), min_value=100, step=100)
+
         # Enrichment
         enrich_cfg = analysis_cfg.get('enrichment', {})
         species = st.selectbox("Species", ["Mouse", "Human", "Yeast", "Fly"], index=["Mouse", "Human", "Yeast", "Fly"].index(enrich_cfg.get('species', 'Mouse')))
@@ -479,12 +685,13 @@ with tab1:
         )
         
         num_clusters = st.number_input("Number of Clusters (k)", value=ts_cfg.get('num_clusters', 4), min_value=2)
-        top_n_genes = st.number_input(
+        ts_top_n_genes = st.number_input(
             "Top N Variable Genes for Clustering", 
             value=ts_cfg.get('top_n_genes', 2000), 
             min_value=100, 
             step=100,
-            help="Recommended range: 1000 - 2000. \n\nSelects the top N genes with the highest variance across time points. \n- < 500: Very strict, only most drastic changes. \n- > 3000: May include too much noise."
+            help="Recommended range: 1000 - 2000. \n\nSelects the top N genes with the highest variance across time points. \n- < 500: Very strict, only most drastic changes. \n- > 3000: May include too much noise.",
+            key="ts_top_n"
         )
 
     # --- Construct Config Object Dynamically ---
@@ -530,8 +737,13 @@ with tab1:
     
     new_config['analysis']['time_series']['enabled'] = ts_enabled
     new_config['analysis']['time_series']['num_clusters'] = num_clusters
-    new_config['analysis']['time_series']['top_n_genes'] = top_n_genes
+    new_config['analysis']['time_series']['top_n_genes'] = ts_top_n_genes
     new_config['analysis']['time_series']['time_column'] = time_col_name
+
+    # Check/Create PCA section if missing
+    if 'pca' not in new_config['analysis']: new_config['analysis']['pca'] = {}
+    new_config['analysis']['pca']['filter_high_variance'] = pca_filter_hvg
+    new_config['analysis']['pca']['top_n_genes'] = pca_top_n
 
     # Save Button (Manual)
     if st.button("💾 Save Configuration"):
@@ -588,11 +800,11 @@ with tab2:
     
     if os.path.exists(BATCH_CORRECTED_FILE):
         COUNTS_FILE = BATCH_CORRECTED_FILE
-        st.info(f"Using Batch Corrected Data: `{os.path.basename(COUNTS_FILE)}`")
+        # RAW_COUNTS_FILE is already defined above
+        st.info(f"Using Batch Corrected Data for Visualizations: `{os.path.basename(COUNTS_FILE)}`")
     else:
         COUNTS_FILE = RAW_COUNTS_FILE
-    METADATA_FILE = config.get('files', {}).get('metadata', get_session_path('input/metadata.csv'))
-    OUTPUT_DIR = config.get('files', {}).get('output_dir', get_session_path('output'))
+        # RAW_COUNTS_FILE = RAW_COUNTS_FILE
 
     @st.cache_data
     def load_data(counts_path, metadata_path):
@@ -601,14 +813,28 @@ with tab2:
         counts = pd.read_csv(counts_path, index_col=0)
         metadata = pd.read_csv(metadata_path, index_col=0)
         return counts, metadata
+    
+    # Load RAW counts for DE analysis (DESeq2 requires raw integer counts)
+    @st.cache_data
+    def load_raw_counts(raw_path):
+        if os.path.exists(raw_path):
+            return pd.read_csv(raw_path, index_col=0)
+        return None
 
     @st.cache_resource
     def get_dds_object(_counts):
+        # Ensure counts are integers (common issue if loaded from non-raw)
+        try:
+             # Round to nearest integer if not already
+            _counts = _counts.round().astype(int)
+        except:
+            pass # If fails, let omicverse handle or fail
         dds = ov.bulk.pyDEG(_counts)
         dds.drop_duplicates_index()
         return dds
 
     counts, metadata = load_data(COUNTS_FILE, METADATA_FILE)
+    raw_counts_df = load_raw_counts(RAW_COUNTS_FILE)
 
     if counts is None or metadata is None:
         st.warning(f"Data not found. Please run the pipeline first or check paths: \n- {COUNTS_FILE}\n- {METADATA_FILE}")
@@ -616,7 +842,12 @@ with tab2:
         # --- Interactive Visualization (Enhanced) ---
         st.subheader("1. Gene Expression Visualization")
         
-        dds = get_dds_object(counts)
+        # Use RAW counts for DE Object
+        if raw_counts_df is not None:
+             dds = get_dds_object(raw_counts_df)
+        else:
+             st.warning("Raw counts file not found. Using displayed counts for DE (may be incorrect if normalized).")
+             dds = get_dds_object(counts)
         all_genes = counts.index.tolist()
         all_conditions = metadata['Condition'].unique().tolist()
         
@@ -649,6 +880,14 @@ with tab2:
                 
                 # --- BOXPLOT LOGIC ---
                 expr_data = counts.loc[selected_genes, target_samples].T
+                
+                # Check if data needs log transformation for visualization
+                y_label = "Normalized Counts"
+                if expr_data.max().max() > 100:
+                     st.info("Data values > 100 detected. Applying Log2(Expression + 1) for better visualization.")
+                     expr_data = np.log2(expr_data + 1)
+                     y_label = "Log2(Normalized Counts + 1)"
+
                 plot_df = expr_data.merge(metadata[['Condition']], left_index=True, right_index=True)
                 df_long = plot_df.melt(id_vars='Condition', value_vars=selected_genes, var_name='Gene', value_name='Expression')
                 df_long['Condition'] = pd.Categorical(df_long['Condition'], categories=selected_conditions, ordered=True)
@@ -669,7 +908,7 @@ with tab2:
                     ax.legend(handles[:n_cond], labels[:n_cond], title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
                     
                     ax.set_title("Gene Expression Levels")
-                    ax.set_ylabel("Normalized Counts")
+                    ax.set_ylabel(y_label)
                     plt.tight_layout()
                     
                     st.pyplot(fig)

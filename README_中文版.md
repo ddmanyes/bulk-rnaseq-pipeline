@@ -179,6 +179,7 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
 2. **瀏覽分頁**：
     - **📂 Data Preprocessing (資料前處理)**：選擇包含多個計數檔案 (CSV, Excel, featureCounts) 的資料夾，並將它們合併為單一矩陣。
     - **📝 Metadata Creation (建立元數據)**：互動式地建立或編輯您的 `metadata.csv` 檔案。
+        - **上傳元數據**：**[新增]** 直接上傳您現有的 `metadata.csv` 或 `.xlsx` 檔案來填入表格。
         - **同步 Sample IDs**：自動從您的合併計數矩陣中抓取 Sample IDs。
         - **選擇樣本**：使用 **「Include」** 勾選框來選擇要儲存的樣本。未勾選的樣本將被排除。
         - **可選的時間欄位**：切換 **「Include Time Column」** 來啟用/停用時間序列功能。如果停用，將跳過時間序列分析。
@@ -188,8 +189,8 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
         - 點擊 **"Run Analysis Pipeline"** 開始分析。您可以即時查看執行日誌。
     - **📊 Static Plots (靜態圖表)**：查看分析產生的所有預生成圖表 (PCA, 火山圖, 熱圖)。
     - **🌋 Volcano Plot (火山圖)**：查看靜態火山圖，並透過互動式表格探索底層數據（依顯著性篩選、下載結果）。
-    - **� Interactive Visualization (互動式視覺化)**：
-        - **Boxplot (箱形圖)**：視覺化不同組別間的基因表現分佈。
+    - **Interactive Visualization (互動式視覺化)**：
+        - **Boxplot (箱形圖)**：視覺化不同組別間的基因表現分佈。**自動 Log 轉換**：如果檢測到原始計數 (數值 > 100)，數據將自動進行 log 轉換 (`log2(x+1)`) 以獲得更好的視覺效果。
     - **🧬 Pathway Analysis (通路分析)**：探索富集分析結果。選擇特定的比較和通路圖表（例如 GO Biological Process, KEGG）並下載結果表格。
 
 ### 選項 2：命令列工作流程

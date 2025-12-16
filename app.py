@@ -796,6 +796,7 @@ with tab2:
     # Check for batch corrected data first
     BATCH_CORRECTED_FILE = os.path.join(OUTPUT_DIR, "counts_batch_corrected.csv")
     RAW_COUNTS_FILE = os.path.join(OUTPUT_DIR, "counts.csv")
+    METADATA_FILE = config.get('files', {}).get('metadata', get_session_path('input/metadata.csv'))
     
     if os.path.exists(BATCH_CORRECTED_FILE):
         COUNTS_FILE = BATCH_CORRECTED_FILE

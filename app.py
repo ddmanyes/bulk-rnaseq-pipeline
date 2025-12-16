@@ -694,7 +694,18 @@ with tab1:
     new_config = config.copy()
     # new_config['files']['feature_counts'] = feature_counts_path # Deprecated
     new_config['files']['gene_annotation'] = gene_annotation_path
-    new_config['files']['metadata'] = config['files']['metadata']
+    
+    # Ensure metadata path is absolute (resolve relative paths to session)
+    meta_path_raw = config['files']['metadata']
+    if meta_path_raw and not os.path.isabs(meta_path_raw):
+        if meta_path_raw.startswith("input/"):
+             meta_path_resolved = get_session_path(meta_path_raw)
+        else:
+             meta_path_resolved = get_session_path(meta_path_raw)
+    else:
+        meta_path_resolved = meta_path_raw
+        
+    new_config['files']['metadata'] = meta_path_resolved
     new_config['files']['output_dir'] = output_dir_path
     new_config['files']['batch_correction'] = {'enabled': batch_enabled, 'batch_key': batch_key}
     

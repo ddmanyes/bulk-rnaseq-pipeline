@@ -45,6 +45,7 @@
 │   ├── TimeSeries_Clustering_k4.png         # 時間序列分群圖
 │   ├── k_evaluation_plot.png                # 選擇 k 值的輔助圖 (可選)
 │   └── enrichment/                          # GO/KEGG/Reactome 結果 (CSV 和圖表)
+├── time_series_enrichment.ipynb             # 用於時間序列分群與富集分析的獨立 Notebook
 ├── analysis_pipeline.py                     # 主要的可執行分析腳本
 ├── kallisto_to_matrix.py                    # 將 Kallisto 輸出轉換為基因計數的輔助腳本
 ├── app.py                                   # 互動式 Streamlit 網頁應用程式
@@ -223,6 +224,23 @@ Streamlit 應用程式為整個工作流程提供了友善的使用者介面。
 - **圖表**：`PCA_plot.png`, `Volcano_*.png`, `Heatmap_*.png`, `TimeSeries_*.png`。
 - **數據**：`counts.csv`, `counts_batch_corrected.csv`, `DEG_*.csv`, `Master_Results_Table.csv`。
 - **富集分析**：`enrichment/` 資料夾，包含 GO/KEGG 分析的 dotplots 和 CSV。
+
+## 時間序列富集分析 Notebook
+
+對於想要進行**深入時間序列分析**（分群 + 功能富集）的使用者，我們提供了一個獨立的 Jupyter Notebook：`time_series_enrichment.ipynb`。
+
+### 功能特色
+
+- **自訂分群**：可自由調整 K 值與視覺化參數。
+- **數據處理**：自動處理重複樣本 (replicates) 與 0h 對照組時間點。
+- **富集分析**：針對**每個識別出的 Cluster** 執行 GO Biological Process 和 KEGG pathway 富集分析。
+- **互動性**：直接在 Notebook 中修改基因集或分群邏輯。
+
+### 如何使用
+
+1. 至少執行一次主流程以生成 `output/normalized_counts_for_plotting.csv`。
+2. 在 Jupyter Lab 或 Notebook 中開啟 `time_series_enrichment.ipynb`。
+3. 執行所有單元格 (Cells) 以生成分群熱圖和富集分析點圖。
 
 ## 參考文獻與引用 (References)
 

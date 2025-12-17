@@ -57,6 +57,7 @@ The pipeline starts from a raw `featureCounts` matrix, performs differential gen
 │   ├── TimeSeries_Clustering_k4.png         # Time-series cluster plot
 │   ├── k_evaluation_plot.png                # Optional plot to help choose k
 │   └── enrichment/                          # GO/KEGG/Reactome results (CSVs & plots)
+├── time_series_enrichment.ipynb             # Standalone notebook for time-series clustering & enrichment
 ├── analysis_pipeline.py                     # The main executable analysis script
 ├── kallisto_to_matrix.py                    # Helper script to convert Kallisto output to gene counts
 ├── app.py                                   # The interactive Streamlit web application
@@ -235,6 +236,23 @@ The pipeline generates the following in the `output/` directory:
 - **Plots**: `PCA_plot.png`, `Volcano_*.png`, `Heatmap_*.png`, `TimeSeries_*.png`.
 - **Data**: `counts.csv`, `counts_batch_corrected.csv`, `DEG_*.csv`, `Master_Results_Table.csv`.
 - **Enrichment**: `enrichment/` folder containing dotplots and CSVs for GO/KEGG analysis.
+
+## Time Series Enrichment Notebook
+
+For users who want to perform **in-depth time-series analysis** (clustering + functional enrichment) beyond the standard pipeline, we provide a standalone Jupyter Notebook: `time_series_enrichment.ipynb`.
+
+### Features
+
+- **Customizable Clustering**: Experiment with different K values and visualization parameters.
+- **Data Handling**: Automatically handles replicates and the 0h control timepoint.
+- **Enrichment Analysis**: Performs GO Biological Process and KEGG pathway enrichment **specifically for each identified cluster**.
+- **Interactive**: Modify gene sets or clustering logic directly in the notebook.
+
+### How to Use
+
+1. Run the main pipeline at least once to generate `output/normalized_counts_for_plotting.csv`.
+2. Open `time_series_enrichment.ipynb` in Jupyter Lab or Notebook.
+3. Run all cells to generate clustered heatmaps and enrichment dotplots.
 
 ## References & Citations
 

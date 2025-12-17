@@ -664,8 +664,8 @@ def _get_timeseries_data_for_clustering(norm_counts, metadata, cfg):
     top_n = ts_cfg.get('top_n_genes', 200)
     time_col = ts_cfg.get('time_column', 'Time') # Default to 'Time'
 
-    # Select only treatment samples
-    treat_samples = metadata[metadata['Type'] == 'Treat'].index
+    # Select treatment samples AND Control samples (for 0h timepoint)
+    treat_samples = metadata[metadata['Type'].isin(['Treat', 'Control'])].index
     treat_counts = norm_counts[treat_samples]
     treat_meta = metadata.loc[treat_samples]
 
